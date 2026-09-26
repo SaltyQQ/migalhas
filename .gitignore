@@ -1,0 +1,14 @@
+# Private key created by Chrome's "Pack extension". Never publish it.
+*.pem
+
+# Packed extension builds
+*.crx
+*.zip
+
+# OS files
+Thumbs.db
+desktop.ini
+.DS_Store
+
+# Local Claude Code settings
+.claude/settings.local.json
