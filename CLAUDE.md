@@ -13,7 +13,8 @@ Idioma do código e comentários: inglês
 - Sem npm e sem passo de build: os ficheiros são carregados diretamente pelo browser
 
 # Testar
-- chrome://extensions → ativar modo programador → "Load unpacked" → escolher a pasta do projeto.
+- IMPORTANT: testar sempre no perfil do Chrome "Migalhas teste" (sem contas nem sessões), nunca no perfil principal. A limpeza apaga cookies e termina sessões. A extensão só pode ir para o perfil principal quando existir a whitelist. Atenção: reiniciar o Chrome recarrega a extensão a partir da pasta, mesmo sem carregar no botão de recarregar.
+- No perfil de teste: chrome://extensions → ativar modo programador → "Load unpacked" → escolher a pasta do projeto.
 - Depois de cada alteração: carregar no botão de recarregar da extensão em chrome://extensions e fazer refresh à página de teste.
 - Erros do content script: consola da página (F12).
 - Erros do service worker: link "service worker" na extensão em chrome://extensions.
