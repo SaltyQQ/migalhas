@@ -1,8 +1,9 @@
 {
   "manifest_version": 3,
   "name": "Migalhas",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Rejects non-essential cookie consent banners and clears cookies automatically.",
+  "permissions": ["alarms", "browsingData", "tabs"],
   "background": {
     "service_worker": "background.js"
   }
