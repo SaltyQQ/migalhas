@@ -1,42 +1,58 @@
-// Service worker: schedules and runs the periodic cookie clean-up.
-// Chrome stops this worker when idle, so use chrome.alarms (not setInterval) for timers.
+// Service worker: clears cookies when the clean-up alarm fires or the settings page asks for it.
 
-const CLEANUP_ALARM = "cookie-cleanup";
-const DEFAULT_INTERVAL_MINUTES = 60;
+import { CLEANUP_ALARM, ensureCleanupScheduled, scheduleCleanup } from "./schedule.js";
+import { hasAllSitesAccess, loadKeptSites, siteToOrigin } from "./sites.js";
 
-chrome.runtime.onInstalled.addListener(scheduleCleanup);
+chrome.runtime.onInstalled.addListener(initialize);
 chrome.runtime.onStartup.addListener(ensureCleanupScheduled);
+chrome.alarms.onAlarm.addListener(handleAlarm);
+chrome.runtime.onMessage.addListener(handleMessage);
 
-chrome.alarms.onAlarm.addListener((alarm) => {
+async function initialize() {
+  await loadKeptSites(); // On the first run, this keeps every site that already has cookies.
+  await scheduleCleanup();
+}
+
+function handleAlarm(alarm) {
   if (alarm.name === CLEANUP_ALARM) {
     runCleanup();
   }
-});
-
-function scheduleCleanup() {
-  chrome.alarms.create(CLEANUP_ALARM, { periodInMinutes: DEFAULT_INTERVAL_MINUTES });
 }
 
-// Chrome may drop alarms when the browser restarts, so recreate it if missing.
-async function ensureCleanupScheduled() {
-  const alarm = await chrome.alarms.get(CLEANUP_ALARM);
-  if (!alarm) {
-    scheduleCleanup();
+// The settings page sends "run-cleanup" when the user clicks "Clean now".
+function handleMessage(message, sender, sendResponse) {
+  if (message?.type !== "run-cleanup") {
+    return false;
   }
+  runCleanup()
+    .then(sendResponse)
+    .catch((error) => {
+      console.error("Migalhas: clean-up failed.", error);
+      sendResponse({ done: false, error: error.message });
+    });
+  return true; // Keeps sendResponse valid until the clean-up finishes.
 }
 
-// Clears cookies of every site except those open in a tab right now.
-// Skipped sites are cleared on a later run, once their tabs are closed.
+// Clears the cookies of every site except kept sites and sites open in a tab.
+// Open sites that are not kept are cleared on a later run, once their tabs are closed.
 async function runCleanup() {
+  if (!(await hasAllSitesAccess())) {
+    console.warn("Migalhas: clean-up skipped. Without access to all sites, open tabs can't be detected.");
+    return { done: false };
+  }
+
+  const keptOrigins = (await loadKeptSites()).map(siteToOrigin).filter(Boolean);
   const openOrigins = await getOpenTabOrigins();
-  const options = openOrigins.length > 0 ? { excludeOrigins: openOrigins } : {};
+  const excludeOrigins = [...new Set([...keptOrigins, ...openOrigins])];
+  const options = excludeOrigins.length > 0 ? { excludeOrigins } : {};
 
   await chrome.browsingData.remove(options, { cookies: true });
-  console.log(`Migalhas: cookies cleared, ${openOrigins.length} open site(s) kept.`);
+  console.log(`Migalhas: cookies cleared. Kept ${keptOrigins.length} site(s) and ${openOrigins.length} open site(s).`);
+  return { done: true };
 }
 
 // Returns the unique web origins (http/https) of all open tabs.
-// browsingData keeps cookies for the whole domain of each origin (e.g. www.ikea.com keeps ikea.com).
+// Reading tab addresses relies on the access to all sites, so no "tabs" permission is needed.
 async function getOpenTabOrigins() {
   const tabs = await chrome.tabs.query({});
   const origins = tabs.map((tab) => toWebOrigin(tab.url)).filter(Boolean);

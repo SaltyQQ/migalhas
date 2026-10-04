@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Migalhas settings</title>
+  <link rel="stylesheet" href="options.css">
+  <script type="module" src="options.js"></script>
+</head>
+<body>
+  <main>
+    <h1>Migalhas</h1>
+
+    <p id="access-warning" class="warning" hidden>
+      Migalhas needs access to all sites to list cookies and to protect open tabs.
+      Turn it on in the extension's details (Site access: On all sites). Until then, the clean-up is paused.
+    </p>
+
+    <section>
+      <h2>Automatic clean-up</h2>
+      <div class="toolbar">
+        <label>
+          Clear cookies every
+          <select id="interval">
+            <option value="15">15 minutes</option>
+            <option value="60">1 hour</option>
+            <option value="1440">24 hours</option>
+          </select>
+        </label>
+        <button id="clean-now" type="button">Clean now</button>
+      </div>
+      <p id="next-cleanup" class="hint"></p>
+      <p id="status" class="hint" role="status"></p>
+    </section>
+
+    <section>
+      <h2>Sites with cookies</h2>
+      <p class="hint">
+        On: cookies are kept. Off: cookies are deleted at the next clean-up, unless the site is open in a tab.
+        New sites start switched off.
+      </p>
+      <div class="toolbar">
+        <input id="search" type="search" placeholder="Search sites" aria-label="Search sites">
+        <button id="switch-all-on" type="button">Switch all on</button>
+        <button id="switch-all-off" type="button">Switch all off</button>
+      </div>
+      <p class="hint">The buttons apply to the sites shown, so you can search first.</p>
+      <ul id="site-list"></ul>
+    </section>
+  </main>
+</body>
+</html>
