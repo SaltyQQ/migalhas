@@ -11,9 +11,11 @@ Idioma do código e comentários: inglês
 - JavaScript simples, sem bibliotecas externas
 - Manifest V3
 - Sem npm e sem passo de build: os ficheiros são carregados diretamente pelo browser
+- Testes automáticos em Node.js, só com módulos nativos (sem npm): pasta `tests/`
 
 # Testar
 - IMPORTANT: testar alterações sempre no perfil do Chrome "Migalhas teste" (sem contas nem sessões), nunca no perfil principal: a limpeza apaga cookies e termina sessões. Reiniciar o Chrome recarrega a extensão a partir da pasta, mesmo sem carregar no botão de recarregar, por isso o perfil principal nunca carrega a pasta do projeto: usa uma cópia separada (fora do projeto), atualizada só com versões já testadas.
+- Teste automático: `node tests/settings.test.mjs` (Chrome invisível, perfil temporário, sem internet; capturas de ecrã em `tests/output/`). Claude corre os testes e vê as capturas depois de cada alteração, e acrescenta testes para cada funcionalidade nova. O teste manual no perfil "Migalhas teste" fica para a confirmação final.
 - No perfil de teste: chrome://extensions → ativar modo programador → "Load unpacked" → escolher a pasta do projeto.
 - Depois de cada alteração: carregar no botão de recarregar da extensão em chrome://extensions e fazer refresh à página de teste.
 - Erros do content script: consola da página (F12).
@@ -27,6 +29,7 @@ Idioma do código e comentários: inglês
 - `content.js` — deteção e recusa de banners nas páginas
 - `rules/` — regras por plataforma de consentimento (CMP), uma por ficheiro
 - `options/` — página de definições (lista de sites com interruptor guardar/apagar, intervalo, "Clean now")
+- `tests/` — testes automáticos: `harness.mjs` lança e controla o Chrome; um `*.test.mjs` por funcionalidade
 
 # Regras importantes
 - IMPORTANT: Manifest V3 não tem background persistente. O service worker é desligado quando está parado, por isso NÃO usar setInterval para a limpeza periódica — usar a API `chrome.alarms`.

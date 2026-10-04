@@ -48,7 +48,8 @@ Issues and pull requests are welcome. For larger changes, please open an issue f
 - Plain JavaScript only: no external libraries and no build step.
 - Each consent management platform (CMP) gets its own rule file in `rules/`.
 - Request the minimum permissions in `manifest.json`, and explain any new permission in your pull request.
-- Test in a separate Chrome profile: the clean-up deletes cookies and ends sessions.
+- Run the automated tests with `node tests/settings.test.mjs` (needs Node.js 18+ and Chrome; no npm). They use a temporary Chrome profile and never go online; screenshots are saved in `tests/output/`.
+- Test by hand in a separate Chrome profile: the clean-up deletes cookies and ends sessions.
 - To test a change, reload the extension in `chrome://extensions` and refresh the test page. Content script errors appear in the page console (F12); service worker errors appear under the extension's **service worker** link.
 - Code or rules copied from other projects must use a GPL-3.0-compatible license. Keep the original copyright notice and credit the source in this README.
 - Never commit personal data, keys or files containing real cookies.

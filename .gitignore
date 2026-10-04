@@ -10,5 +10,8 @@ Thumbs.db
 desktop.ini
 .DS_Store
 
+# Screenshots from the automated tests
+tests/output/
+
 # Local Claude Code settings
 .claude/settings.local.json
