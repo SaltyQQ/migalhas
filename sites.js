@@ -1,4 +1,4 @@
-// Sites with cookies, and the sites whose cookies the user keeps (saved locally).
+// Sites with cookies, and the user's choices per site: kept and locked (saved locally).
 // A "site" is a cookie domain together with its subdomains, e.g. "accounts.google.com" is listed under "google.com".
 
 const ALL_SITES = ["http://*/*", "https://*/*"];
@@ -59,6 +59,16 @@ export async function loadKeptSites() {
 
 export async function saveKeptSites(sites) {
   await chrome.storage.local.set({ keptSites: sites });
+}
+
+// Locked sites keep their switch as it is on the settings page, so it can't change by accident.
+export async function loadLockedSites() {
+  const { lockedSites } = await chrome.storage.local.get("lockedSites");
+  return Array.isArray(lockedSites) ? lockedSites : [];
+}
+
+export async function saveLockedSites(sites) {
+  await chrome.storage.local.set({ lockedSites: sites });
 }
 
 // browsingData keeps cookies for the whole registrable domain of an origin, so keeping

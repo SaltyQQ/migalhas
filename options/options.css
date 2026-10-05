@@ -22,6 +22,11 @@
   }
 }
 
+/* Rows use display: flex, which would otherwise override the hidden attribute used by the search. */
+[hidden] {
+  display: none !important;
+}
+
 body {
   margin: 0;
   background: var(--bg);
@@ -104,14 +109,39 @@ button:disabled {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 10px 4px;
+  padding: 6px 4px;
   border-bottom: 1px solid var(--border);
-  cursor: pointer;
 }
 
 .site-name {
   flex: 1;
   overflow-wrap: anywhere;
+}
+
+/* Padlock button: muted when unlocked, accent colour when locked. */
+.lock {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: none;
+  border-radius: 6px;
+  color: var(--muted);
+}
+
+.lock:hover {
+  background: color-mix(in srgb, currentColor 14%, transparent);
+}
+
+.lock[aria-pressed="true"] {
+  color: var(--accent);
+}
+
+.lock svg {
+  width: 16px;
+  height: 16px;
 }
 
 /* Checkbox styled as an on/off switch. */
@@ -149,6 +179,12 @@ button:disabled {
   transform: translateX(16px);
 }
 
+.switch:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.lock:focus-visible,
 .switch:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;

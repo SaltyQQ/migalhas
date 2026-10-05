@@ -8,7 +8,7 @@ A browser extension for Chrome and other Chromium-based browsers that says "no" 
 
 - **Rejects cookie and ad consent banners** *(planned)*. Detects the banner and refuses everything except strictly necessary cookies. It never clicks "Accept all", even when that is the only button: if there is no reject option, it opens the banner's settings and switches off every optional category; if there are no settings either, it leaves the banner alone.
 - **Clears cookies automatically**, every 60 minutes by default (15 minutes, 1 hour or 24 hours in the settings).
-- **Lets you choose which sites to keep.** The settings page lists every site that has cookies, with a switch to keep or clear it. On first run, every site that already has cookies is kept, so installing Migalhas does not log you out. Sites that appear later are cleared unless you switch them on.
+- **Lets you choose which sites to keep.** The settings page lists every site that has cookies, with a switch to keep or clear it. On first run, every site that already has cookies is kept, so installing Migalhas does not log you out. Sites that appear later are cleared unless you switch them on. A padlock next to each switch locks it, so it can't be changed by accident, not even by the "Switch all" buttons.
 - **Never logs you out mid-use.** Sites open in a tab are skipped and cleared on a later run, once their tabs are closed.
 - **Runs entirely on your device.** No data is sent to any server, and your settings are stored only in this browser.
 

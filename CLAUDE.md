@@ -28,14 +28,14 @@ Idioma do código e comentários: inglês
 - `sites.js` — sites com cookies e sites guardados (partilhado pelo background e pela página de definições)
 - `content.js` — deteção e recusa de banners nas páginas
 - `rules/` — regras por plataforma de consentimento (CMP), uma por ficheiro
-- `options/` — página de definições (lista de sites com interruptor guardar/apagar, intervalo, "Clean now")
+- `options/` — página de definições (lista de sites com interruptor guardar/apagar e cadeado, intervalo, "Clean now")
 - `tests/` — testes automáticos: `harness.mjs` lança e controla o Chrome; um `*.test.mjs` por funcionalidade
 
 # Regras importantes
 - IMPORTANT: Manifest V3 não tem background persistente. O service worker é desligado quando está parado, por isso NÃO usar setInterval para a limpeza periódica — usar a API `chrome.alarms`.
 - Recusar sempre: nunca clicar em "Aceitar tudo", mesmo que seja o único botão visível. Se não houver opção de recusar, abrir "Definições/Gerir opções" e desligar tudo o que não é obrigatório. Se nada disso existir, não fazer nada e registar em log.
 - Pedir as permissões mínimas no manifest. Justificar qualquer permissão nova antes de a adicionar.
-- Sites guardados (whitelist): sites ligados nunca têm cookies limpos (para manter sessões e preferências). A página de definições lista todos os sites com cookies, com um interruptor por site (ligado = guardar, desligado = apagar). Na primeira execução, todos os sites que já existem ficam ligados (instalar nunca termina sessões); os que aparecem depois começam desligados. Guardar com `chrome.storage.local`, nunca `sync` (o sync envia os dados para a conta Google).
+- Sites guardados (whitelist): sites ligados nunca têm cookies limpos (para manter sessões e preferências). A página de definições lista todos os sites com cookies, com um interruptor por site (ligado = guardar, desligado = apagar). Na primeira execução, todos os sites que já existem ficam ligados (instalar nunca termina sessões); os que aparecem depois começam desligados. Cada site tem um cadeado: bloqueado, o interruptor fica fixo (nem um clique nem "Switch all on/off" o mudam). Guardar com `chrome.storage.local`, nunca `sync` (o sync envia os dados para a conta Google).
 - Nunca limpar cookies de sites que tenham um separador aberto no momento da limpeza (para não me desligar a meio de usar o site). Esses sites ficam para a limpeza seguinte. Sem acesso a todos os sites não dá para ver os separadores abertos: nesse caso, não limpar nada.
 - Não enviar dados para servidores externos. Tudo corre localmente.
 
