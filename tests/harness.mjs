@@ -1,15 +1,21 @@
-// Test harness: starts a throwaway headless Chrome with Migalhas loaded and drives it over the
-// DevTools protocol. It uses a fresh temporary profile and serves web pages offline, so real
-// profiles, cookies and websites are never touched. Needs Node.js 18+ and Chrome; no npm packages.
+// Test harness: starts a throwaway headless Chrome and drives it over the DevTools protocol.
+// Two modes:
+// - offline (default): Migalhas is installed like "Load unpacked" and web pages are served locally,
+//   so no website is contacted. Uses --remote-debugging-pipe, which loading an extension requires.
+// - real sites: opens real websites and injects the content scripts the way Chrome does for the
+//   installed extension. Chrome runs without administrator rights and is reached through a port.
+// Both use a fresh temporary profile, so real profiles and cookies are never touched.
+// Needs Node.js 22+ (built-in WebSocket) and Chrome; no npm packages.
 
 import { spawn } from "node:child_process";
-import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 export const PROJECT_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const OUTPUT_DIR = path.join(PROJECT_DIR, "tests", "output");
+const COMMAND_TIMEOUT_MS = 30000;
 
 const CHROME_PATHS = [
   process.env.CHROME_PATH,
@@ -49,13 +55,14 @@ export function createReport() {
     check(label, ok, detail = "") {
       checks.push({ label, ok: Boolean(ok), detail });
     },
-    // Prints every check and exits with code 1 if any failed.
-    finish(browser) {
+    // Prints every check and exits with code 1 if any failed. showConsole picks the console lines to print.
+    finish(browser, { showConsole = () => true } = {}) {
       for (const { label, ok, detail } of checks) {
         console.log(`${ok ? "PASS" : "FAIL"}  ${label}${!ok && detail ? `\n      ${detail}` : ""}`);
       }
-      if (browser?.consoleLines.length) {
-        console.log(`\nConsole:\n${browser.consoleLines.map((line) => `  ${line}`).join("\n")}`);
+      const lines = browser?.consoleLines.filter(showConsole) ?? [];
+      if (lines.length > 0) {
+        console.log(`\nConsole:\n${lines.map((line) => `  ${line}`).join("\n")}`);
       }
       const failed = checks.filter((c) => !c.ok).length;
       console.log(`\n${checks.length - failed}/${checks.length} checks passed`);
@@ -67,61 +74,90 @@ export function createReport() {
   };
 }
 
-export async function launchBrowser() {
+export async function launchBrowser({ realSites = false } = {}) {
   const chromePath = CHROME_PATHS.find((candidate) => candidate && existsSync(candidate));
   if (!chromePath) {
     throw new Error("Chrome not found. Set the CHROME_PATH environment variable to the Chrome executable.");
   }
   const profileDir = mkdtempSync(path.join(os.tmpdir(), "migalhas-test-"));
+  const commonArgs = ["--headless", `--user-data-dir=${profileDir}`, "--no-first-run", "--no-default-browser-check", "--disable-sync"];
+  return realSites ? launchWithPort(chromePath, profileDir, commonArgs) : launchWithPipe(chromePath, profileDir, commonArgs);
+}
+
+function launchWithPipe(chromePath, profileDir, commonArgs) {
   const proc = spawn(
     chromePath,
     [
-      "--headless",
-      // On Windows, Chrome refuses to run as administrator and relaunches itself in a new process
-      // that loses the debugging pipe. This keeps it in this process; web pages are served offline.
+      ...commonArgs,
+      // On Windows, Chrome refuses to run as administrator and relaunches itself in a new process that
+      // loses the pipe. This keeps it in this process, which is safe here because pages are served offline.
       "--do-not-de-elevate",
-      `--user-data-dir=${profileDir}`,
       "--remote-debugging-pipe",
       "--enable-unsafe-extension-debugging",
-      "--no-first-run",
-      "--no-default-browser-check",
-      "--disable-sync",
       "about:blank",
     ],
     { stdio: ["ignore", "ignore", "pipe", "pipe", "pipe"] },
   );
-  return new Browser(proc, profileDir);
+  // The pipe carries NUL-separated JSON: fd 3 to Chrome, fd 4 from Chrome.
+  const cdp = new Cdp((text) => proc.stdio[3].write(`${text}\0`));
+  let buffer = "";
+  proc.stdio[4].setEncoding("utf8");
+  proc.stdio[4].on("data", (chunk) => {
+    buffer += chunk;
+    let end;
+    while ((end = buffer.indexOf("\0")) !== -1) {
+      cdp.receive(buffer.slice(0, end));
+      buffer = buffer.slice(end + 1);
+    }
+  });
+  const browser = new Browser(cdp, profileDir, { proc });
+  proc.stderr.on("data", (chunk) => (browser.stderr += chunk));
+  return browser;
 }
 
-// Minimal DevTools protocol client over --remote-debugging-pipe:
-// fd 3 carries commands to Chrome, fd 4 carries replies and events, as NUL-separated JSON.
+// Without --do-not-de-elevate, Chrome drops administrator rights (relaunching itself if needed) and
+// writes the debugging port it picked to DevToolsActivePort in the profile folder.
+async function launchWithPort(chromePath, profileDir, commonArgs) {
+  spawn(chromePath, [...commonArgs, "--remote-debugging-port=0", "about:blank"], { stdio: "ignore", detached: true }).unref();
+  const portFile = path.join(profileDir, "DevToolsActivePort");
+  const [port, browserPath] = await waitFor(
+    () => {
+      const lines = existsSync(portFile) ? readFileSync(portFile, "utf8").trim().split(/\r?\n/) : [];
+      return lines.length >= 2 ? lines : null;
+    },
+    "Chrome's debugging port",
+    20000,
+  );
+  const socket = new WebSocket(`ws://127.0.0.1:${port}${browserPath}`);
+  await new Promise((resolve, reject) => {
+    socket.addEventListener("open", resolve, { once: true });
+    socket.addEventListener("error", () => reject(new Error("Could not connect to Chrome")), { once: true });
+  });
+  const cdp = new Cdp((text) => socket.send(text));
+  socket.addEventListener("message", (event) => cdp.receive(event.data));
+  return new Browser(cdp, profileDir, { disconnect: () => socket.close() });
+}
+
+// Minimal DevTools protocol client; the transport (pipe or WebSocket) is given by write/receive.
 class Cdp {
-  constructor(proc) {
-    this.out = proc.stdio[3];
+  constructor(write) {
+    this.write = write;
     this.nextId = 1;
     this.pending = new Map();
     this.listeners = [];
-    let buffer = "";
-    proc.stdio[4].setEncoding("utf8");
-    proc.stdio[4].on("data", (chunk) => {
-      buffer += chunk;
-      let end;
-      while ((end = buffer.indexOf("\0")) !== -1) {
-        this.dispatch(JSON.parse(buffer.slice(0, end)));
-        buffer = buffer.slice(end + 1);
-      }
-    });
   }
 
-  dispatch(message) {
+  receive(text) {
+    const message = JSON.parse(text);
     const waiting = this.pending.get(message.id);
     if (!waiting) {
       this.listeners.forEach((listener) => listener(message));
       return;
     }
     this.pending.delete(message.id);
+    clearTimeout(waiting.timer);
     if (message.error) {
-      waiting.reject(new Error(`${message.error.message} ${message.error.data ?? ""}`.trim()));
+      waiting.reject(new Error(`${waiting.method}: ${message.error.message} ${message.error.data ?? ""}`.trim()));
     } else {
       waiting.resolve(message.result);
     }
@@ -129,22 +165,27 @@ class Cdp {
 
   send(method, params = {}, sessionId) {
     const id = this.nextId++;
-    this.out.write(`${JSON.stringify({ id, method, params, ...(sessionId ? { sessionId } : {}) })}\0`);
-    return new Promise((resolve, reject) => this.pending.set(id, { resolve, reject }));
+    this.write(JSON.stringify({ id, method, params, ...(sessionId ? { sessionId } : {}) }));
+    return new Promise((resolve, reject) => {
+      const timer = setTimeout(() => {
+        this.pending.delete(id);
+        reject(new Error(`${method} got no reply from Chrome`));
+      }, COMMAND_TIMEOUT_MS);
+      this.pending.set(id, { method, resolve, reject, timer });
+    });
   }
 }
 
 class Browser {
-  constructor(proc, profileDir) {
-    this.proc = proc;
+  constructor(cdp, profileDir, { proc = null, disconnect = () => {} } = {}) {
+    this.cdp = cdp;
     this.profileDir = profileDir;
-    this.cdp = new Cdp(proc);
+    this.proc = proc;
+    this.disconnect = disconnect;
     this.sessionNames = new Map();
     this.consoleLines = [];
     this.errors = [];
     this.stderr = "";
-    proc.stderr.on("data", (chunk) => (this.stderr += chunk));
-    this.killTimer = setTimeout(() => proc.kill(), 120000);
     this.cdp.listeners.push((message) => this.recordConsole(message));
   }
 
@@ -167,7 +208,7 @@ class Browser {
     return this.cdp.send(method, params, sessionId);
   }
 
-  // Installs the extension like "Load unpacked" and returns its id.
+  // Installs the extension like "Load unpacked" and returns its id (offline mode only).
   async loadExtension(dir = PROJECT_DIR) {
     await this.send("Target.setDiscoverTargets", { discover: true });
     const { id } = await this.send("Extensions.loadUnpacked", { path: dir });
@@ -212,8 +253,8 @@ class Browser {
     return session;
   }
 
-  // Opens a tab on a web address without touching the network: every request gets a tiny local page.
-  async openOfflineTab(url) {
+  // Opens a tab on a web address without touching the network: every request gets the given HTML.
+  async openOfflineTab(url, html = "<title>Offline test page</title>") {
     const { targetId } = await this.send("Target.createTarget", { url: "about:blank" });
     const session = await this.attach(targetId, `tab ${url}`);
     this.cdp.listeners.push((message) => {
@@ -223,8 +264,8 @@ class Browser {
           {
             requestId: message.params.requestId,
             responseCode: 200,
-            responseHeaders: [{ name: "Content-Type", value: "text/html" }],
-            body: Buffer.from("<title>Offline test page</title>").toString("base64"),
+            responseHeaders: [{ name: "Content-Type", value: "text/html; charset=utf-8" }],
+            body: Buffer.from(html).toString("base64"),
           },
           session,
         );
@@ -233,6 +274,47 @@ class Browser {
     await this.send("Fetch.enable", { patterns: [{ urlPattern: "*" }] }, session);
     await this.send("Page.navigate", { url }, session);
     return session;
+  }
+
+  // Opens a real website like a normal Chrome would: no "Headless" in the user agent, Portuguese first.
+  async openRealPage(url) {
+    const { userAgent } = await this.send("Browser.getVersion");
+    const { targetId } = await this.send("Target.createTarget", { url: "about:blank" });
+    const session = await this.attach(targetId, `page ${url}`);
+    await this.send(
+      "Emulation.setUserAgentOverride",
+      { userAgent: userAgent.replace("HeadlessChrome", "Chrome"), acceptLanguage: "pt-PT,pt;q=0.9" },
+      session,
+    );
+    await this.send("Emulation.setDeviceMetricsOverride", { width: 1280, height: 900, deviceScaleFactor: 1, mobile: false }, session);
+    await this.send("Page.enable", {}, session);
+    await this.send("Page.navigate", { url }, session);
+    await waitFor(
+      () => this.evaluate(session, `location.href !== "about:blank" && document.readyState === "complete"`),
+      `${url} to load`,
+      30000,
+    );
+    return session;
+  }
+
+  // Runs the content scripts listed in manifest.json in an isolated world, like Chrome does for the
+  // installed extension. Used on real sites, where the extension itself can't be loaded.
+  async injectContentScripts(session) {
+    const manifest = JSON.parse(readFileSync(path.join(PROJECT_DIR, "manifest.json"), "utf8"));
+    const files = manifest.content_scripts.flatMap((entry) => entry.js);
+    const { frameTree } = await this.send("Page.getFrameTree", {}, session);
+    const { executionContextId } = await this.send(
+      "Page.createIsolatedWorld",
+      { frameId: frameTree.frame.id, worldName: "Migalhas content scripts" },
+      session,
+    );
+    for (const file of files) {
+      const source = `${readFileSync(path.join(PROJECT_DIR, file), "utf8")}\n//# sourceURL=migalhas/${file}`;
+      const { exceptionDetails } = await this.send("Runtime.evaluate", { expression: source, contextId: executionContextId }, session);
+      if (exceptionDetails) {
+        throw new Error(`${file}: ${exceptionDetails.exception?.description ?? exceptionDetails.text}`);
+      }
+    }
   }
 
   async setCookies(domains) {
@@ -248,7 +330,7 @@ class Browser {
   }
 
   // Saves a PNG of the page in tests/output/ (ignored by Git).
-  async screenshot(session, fileName, colorScheme) {
+  async screenshot(session, fileName, colorScheme = "light") {
     await this.send("Emulation.setDeviceMetricsOverride", { width: 800, height: 760, deviceScaleFactor: 1, mobile: false }, session);
     await this.send("Emulation.setEmulatedMedia", { features: [{ name: "prefers-color-scheme", value: colorScheme }] }, session);
     await sleep(300);
@@ -258,14 +340,14 @@ class Browser {
   }
 
   async close() {
-    try {
-      await Promise.race([this.send("Browser.close"), sleep(5000)]);
-    } catch {
-      // Chrome may already be gone.
-    }
-    clearTimeout(this.killTimer);
-    this.proc.kill();
+    await Promise.race([this.send("Browser.close").catch(() => {}), sleep(5000)]);
+    this.proc?.kill();
+    this.disconnect();
     await sleep(1000);
-    rmSync(this.profileDir, { recursive: true, force: true, maxRetries: 10, retryDelay: 500 });
+    try {
+      rmSync(this.profileDir, { recursive: true, force: true, maxRetries: 10, retryDelay: 500 });
+    } catch (error) {
+      console.warn(`Could not remove the temporary profile ${this.profileDir}: ${error.message}`);
+    }
   }
 }

@@ -2,11 +2,11 @@
 
 A browser extension for Chrome and other Chromium-based browsers that says "no" to cookie consent banners and clears cookies on a schedule. *Migalhas* is Portuguese for "crumbs".
 
-> **Status:** early development. Automatic cookie clean-up and the settings page work; banner rejection is not implemented yet.
+> **Status:** early development. Automatic cookie clean-up, the settings page and banner rejection for Cookiebot work; more consent platforms are coming.
 
 ## What it does
 
-- **Rejects cookie and ad consent banners** *(planned)*. Detects the banner and refuses everything except strictly necessary cookies. It never clicks "Accept all", even when that is the only button: if there is no reject option, it opens the banner's settings and switches off every optional category; if there are no settings either, it leaves the banner alone.
+- **Rejects cookie and ad consent banners.** Detects the banner and refuses everything except strictly necessary cookies. It never clicks "Accept all", even when that is the only button: if there is no reject option, it opens the banner's settings and switches off every optional category; if there are no settings either, it leaves the banner alone. Afterwards it checks what the site saved and writes the result to the page console (F12). Supported so far: Cookiebot. More consent platforms are coming.
 - **Clears cookies automatically**, every 60 minutes by default (15 minutes, 1 hour or 24 hours in the settings).
 - **Lets you choose which sites to keep.** The settings page lists every site that has cookies, with a switch to keep or clear it. On first run, every site that already has cookies is kept, so installing Migalhas does not log you out. Sites that appear later are cleared unless you switch them on. A padlock next to each switch locks it, so it can't be changed by accident, not even by the "Switch all" buttons.
 - **Never logs you out mid-use.** Sites open in a tab are skipped and cleared on a later run, once their tabs are closed.
@@ -22,7 +22,7 @@ Only cookies are cleared for now. Some sites keep logins in other browser storag
 | `browsingData` | Deletes cookies, except those of kept sites and of sites open in a tab. |
 | `cookies` | Lists the sites that have cookies, for the settings page. |
 | `storage` | Saves your settings in this browser only. |
-| Access to all sites | Reads the cookies of every site and sees which sites are open in tabs. Chrome shows this as "Read and change all your data on all websites". Without it, Migalhas skips the clean-up rather than risk logging you out. |
+| Access to all sites | Finds and rejects consent banners on the pages you visit, reads the cookies of every site and sees which sites are open in tabs. Chrome shows this as "Read and change all your data on all websites". Without it, Migalhas skips the clean-up rather than risk logging you out. |
 
 ## Supported browsers
 
@@ -48,7 +48,9 @@ Issues and pull requests are welcome. For larger changes, please open an issue f
 - Plain JavaScript only: no external libraries and no build step.
 - Each consent management platform (CMP) gets its own rule file in `rules/`.
 - Request the minimum permissions in `manifest.json`, and explain any new permission in your pull request.
-- Run the automated tests with `node tests/settings.test.mjs` (needs Node.js 18+ and Chrome; no npm). They use a temporary Chrome profile and never go online; screenshots are saved in `tests/output/`.
+- Run the automated tests (needs Node.js 22+ and Chrome; no npm). They use a temporary Chrome profile and save screenshots in `tests/output/`:
+  - `node tests/settings.test.mjs` and `node tests/banners.test.mjs` work offline, on local copies of the banners.
+  - `node tests/real-sites.test.mjs` checks the real test sites and needs internet.
 - Test by hand in a separate Chrome profile: the clean-up deletes cookies and ends sessions.
 - To test a change, reload the extension in `chrome://extensions` and refresh the test page. Content script errors appear in the page console (F12); service worker errors appear under the extension's **service worker** link.
 - Code or rules copied from other projects must use a GPL-3.0-compatible license. Keep the original copyright notice and credit the source in this README.
