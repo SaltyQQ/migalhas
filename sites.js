@@ -8,7 +8,7 @@ export function hasAllSitesAccess() {
   return chrome.permissions.contains({ origins: ALL_SITES });
 }
 
-// Returns a Map of site -> number of cookies.
+// Returns a Map of site -> { cookies: number of cookies, hosts: cookie hosts grouped under the site }.
 export async function getCookieSites() {
   const cookies = await chrome.cookies.getAll({});
   const countsByHost = new Map();
@@ -26,7 +26,10 @@ function groupBySite(countsByHost) {
   const hosts = [...countsByHost.keys()].sort((a, b) => a.length - b.length);
   for (const host of hosts) {
     const site = findParentSite(host, sites) ?? host;
-    sites.set(site, (sites.get(site) ?? 0) + countsByHost.get(host));
+    const entry = sites.get(site) ?? { cookies: 0, hosts: [] };
+    entry.cookies += countsByHost.get(host);
+    entry.hosts.push(host);
+    sites.set(site, entry);
   }
   return sites;
 }

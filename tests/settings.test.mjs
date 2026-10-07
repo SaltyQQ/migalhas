@@ -49,6 +49,20 @@ const waitForKept = (page, condition, label) =>
     return kept && condition(kept) ? kept : null;
   }, label);
 
+async function writeLocalStorage(tab) {
+  await waitFor(() => browser.evaluate(tab, `location.protocol === "https:" && document.readyState === "complete"`), "the page to load");
+  await browser.evaluate(tab, `localStorage.setItem("migalhas-test", "kept")`);
+}
+
+// Opens the site again (served offline) and reads the test value; the tab is closed afterwards.
+async function readLocalStorage(url) {
+  const tab = await browser.openOfflineTab(url);
+  await waitFor(() => browser.evaluate(tab, `location.protocol === "https:" && document.readyState === "complete"`), "the page to load");
+  const value = await browser.evaluate(tab, `localStorage.getItem("migalhas-test")`);
+  await browser.closeTab(tab);
+  return value;
+}
+
 async function reloadPage(page) {
   await browser.evaluate(page, "window.beforeReload = true");
   await browser.send("Page.reload", {}, page);
@@ -73,7 +87,15 @@ try {
 
   // Sites that appear after installation, and an open tab on one of them.
   await browser.setCookies(["example.net", "iana.org"]);
-  await browser.openOfflineTab("https://example.net/");
+  const openTab = await browser.openOfflineTab("https://example.net/");
+
+  // localStorage on a kept site, a site that will be switched off, and the open site.
+  await writeLocalStorage(openTab);
+  for (const url of ["https://example.com/", "https://example.org/"]) {
+    const tab = await browser.openOfflineTab(url);
+    await writeLocalStorage(tab);
+    await browser.closeTab(tab);
+  }
 
   const page = await browser.openPage(`chrome-extension://${extensionId}/options/options.html`, "settings page");
   await waitFor(async () => (await readRows(page)).length >= 4, "the site list");
@@ -161,6 +183,9 @@ try {
   check("New site without a tab is cleared (iana.org)", !domainsAfter.includes("iana.org"));
   const sitesAfter = (await readRows(page)).map((row) => row.site);
   check("List refreshed after clean-up", sameSet(sitesAfter, ["example.com", "example.net"]), JSON.stringify(sitesAfter));
+  check("Kept site keeps its localStorage (example.com)", (await readLocalStorage("https://example.com/")) === "kept");
+  check("Switched-off site loses its localStorage (example.org)", (await readLocalStorage("https://example.org/")) === null);
+  check("Open site keeps its localStorage (example.net)", (await browser.evaluate(openTab, `localStorage.getItem("migalhas-test")`)) === "kept");
 
   // Changing the interval.
   await setField(page, "interval", "15", "change");

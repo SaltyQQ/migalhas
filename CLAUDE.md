@@ -45,6 +45,7 @@ Idioma do código e comentários: inglês
 - Pedir as permissões mínimas no manifest. Justificar qualquer permissão nova antes de a adicionar.
 - Sites guardados (whitelist): sites ligados nunca têm cookies limpos (para manter sessões e preferências). A página de definições lista todos os sites com cookies, com um interruptor por site (ligado = guardar, desligado = apagar). Na primeira execução, todos os sites que já existem ficam ligados (instalar nunca termina sessões); os que aparecem depois começam desligados. Cada site tem um cadeado: bloqueado, o interruptor fica fixo (nem um clique nem "Switch all on/off" o mudam). Guardar com `chrome.storage.local`, nunca `sync` (o sync envia os dados para a conta Google).
 - Nunca limpar cookies de sites que tenham um separador aberto no momento da limpeza (para não me desligar a meio de usar o site). Esses sites ficam para a limpeza seguinte. Sem acesso a todos os sites não dá para ver os separadores abertos: nesse caso, não limpar nada.
+- Outros dados dos sites (localStorage, IndexedDB, Cache Storage, service workers) só são apagados nos sites que estão a ser limpos. O Chrome apaga-os por origem exata (ex.: `https://mail.google.com`), não pelo domínio inteiro como nos cookies, por isso as origens vêm dos hosts com cookies; e, por segurança, nunca se apagam dados de um domínio base (últimos dois rótulos) que esteja guardado ou aberto. Limitação: dados de origens que nunca tiveram cookies não são apagados.
 - Não enviar dados para servidores externos. Tudo corre localmente.
 
 # Open source
@@ -82,5 +83,4 @@ Claude mantém esta lista: acrescentar cada problema que fique por resolver ou c
 - O `--load-extension` já não funciona no Chrome oficial (desde a versão 137): os testes instalam a extensão com `Extensions.loadUnpacked` pelo protocolo DevTools (exige `--remote-debugging-pipe` e `--enable-unsafe-extension-debugging`).
 
 # Upgrades futuros
-- Alargar a limpeza a outros dados dos sites (localStorage, IndexedDB, Cache Storage, service workers): alguns sites guardam o login fora dos cookies e continuam com sessão depois da limpeza. O `chrome.browsingData` já suporta estes tipos com `excludeOrigins`, mas para eles a exclusão é por origem exata (ex.: `https://mail.google.com`) e não pelo domínio inteiro como nos cookies, por isso os sites guardados vão ter de guardar origens.
 - Traduzir a interface para português com `chrome.i18n` (pastas `_locales/en` e `_locales/pt_PT`).

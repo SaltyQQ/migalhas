@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Migalhas",
-  "version": "0.8.0",
+  "version": "0.9.0",
   "description": "Rejects non-essential cookie consent banners and clears cookies automatically.",
   "icons": {
     "16": "icons/icon-16.png",

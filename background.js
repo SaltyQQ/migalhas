@@ -2,7 +2,10 @@
 // and shows on the toolbar icon what happened to the consent banner of each tab.
 
 import { CLEANUP_ALARM, ensureCleanupScheduled, scheduleCleanup } from "./schedule.js";
-import { hasAllSitesAccess, loadKeptSites, siteToOrigin } from "./sites.js";
+import { getCookieSites, hasAllSitesAccess, loadKeptSites, siteToOrigin } from "./sites.js";
+
+// Site data cleared along with the cookies of a site (where sites may keep logins too).
+const SITE_DATA = { localStorage: true, indexedDB: true, cacheStorage: true, serviceWorkers: true };
 
 // Toolbar badge for each banner result sent by the content script.
 const BADGES = {
@@ -65,7 +68,8 @@ function clearBadgeOnNavigation(tabId, changeInfo) {
   }
 }
 
-// Clears the cookies of every site except kept sites and sites open in a tab.
+// Clears the cookies of every site except kept sites and sites open in a tab, plus the other site data
+// (localStorage, IndexedDB, caches, service workers) of the sites being cleared.
 // Open sites that are not kept are cleared on a later run, once their tabs are closed.
 async function runCleanup() {
   if (!(await hasAllSitesAccess())) {
@@ -73,14 +77,40 @@ async function runCleanup() {
     return { done: false };
   }
 
-  const keptOrigins = (await loadKeptSites()).map(siteToOrigin).filter(Boolean);
+  const keptSites = await loadKeptSites();
+  const keptOrigins = keptSites.map(siteToOrigin).filter(Boolean);
   const openOrigins = await getOpenTabOrigins();
-  const excludeOrigins = [...new Set([...keptOrigins, ...openOrigins])];
-  const options = excludeOrigins.length > 0 ? { excludeOrigins } : {};
+  // Read before the cookies go: the cookie hosts tell which origins have site data to clear.
+  const dataOrigins = await siteDataOriginsToClear(keptSites, openOrigins);
 
-  await chrome.browsingData.remove(options, { cookies: true });
-  console.log(`Migalhas: cookies cleared. Kept ${keptOrigins.length} site(s) and ${openOrigins.length} open site(s).`);
+  const excludeOrigins = [...new Set([...keptOrigins, ...openOrigins])];
+  await chrome.browsingData.remove(excludeOrigins.length > 0 ? { excludeOrigins } : {}, { cookies: true });
+  if (dataOrigins.length > 0) {
+    await chrome.browsingData.remove({ origins: dataOrigins }, SITE_DATA);
+  }
+  console.log(
+    `Migalhas: cookies cleared, and other site data of ${dataOrigins.length / 2} host(s). ` +
+      `Kept ${keptOrigins.length} site(s) and ${openOrigins.length} open site(s).`,
+  );
   return { done: true };
+}
+
+// Site data other than cookies is removed per exact origin (not per domain like cookies), so build
+// the origins from the cookie hosts of the sites being cleared. To stay on the safe side, a site is
+// skipped when its base domain (last two labels) matches a kept site or an open tab.
+async function siteDataOriginsToClear(keptSites, openOrigins) {
+  const protectedBases = new Set([...keptSites, ...openOrigins.map((origin) => new URL(origin).hostname)].map(baseDomain));
+  const origins = [];
+  for (const [site, { hosts }] of await getCookieSites()) {
+    if (!protectedBases.has(baseDomain(site))) {
+      hosts.forEach((host) => origins.push(`https://${host}`, `http://${host}`));
+    }
+  }
+  return origins;
+}
+
+function baseDomain(host) {
+  return host.split(".").slice(-2).join(".");
 }
 
 // Returns the unique web origins (http/https) of all open tabs.

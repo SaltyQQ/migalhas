@@ -78,7 +78,7 @@ async function renderSites() {
   keptSites = new Set(await loadKeptSites());
   lockedSites = new Set(await loadLockedSites());
   const sites = [...new Set([...cookieSites.keys(), ...keptSites])].sort();
-  siteList.replaceChildren(...sites.map((site) => createSiteRow(site, cookieSites.get(site) ?? 0)));
+  siteList.replaceChildren(...sites.map((site) => createSiteRow(site, cookieSites.get(site)?.cookies ?? 0)));
   filterSites();
 }
 

@@ -12,14 +12,14 @@ A browser extension for Chrome and other Chromium-based browsers that says "no" 
 - **Never logs you out mid-use.** Sites open in a tab are skipped and cleared on a later run, once their tabs are closed.
 - **Runs entirely on your device.** No data is sent to any server, and your settings are stored only in this browser.
 
-Only cookies are cleared for now. Some sites keep logins in other browser storage (such as localStorage), so they may stay logged in after a clean-up.
+Along with the cookies of a site being cleared, Migalhas also clears its other site data (localStorage, IndexedDB, caches and service workers), where some sites keep logins. Chrome removes this data per exact address, so Migalhas clears it for the addresses that had cookies, and to stay on the safe side it never touches the data of a domain that is kept or open in a tab (for example, keeping `mail.google.com` also protects `drive.google.com`).
 
 ## Permissions
 
 | Permission | Why it is needed |
 | --- | --- |
 | `alarms` | Runs the clean-up on schedule, even after Chrome stops the extension's background worker. |
-| `browsingData` | Deletes cookies, except those of kept sites and of sites open in a tab. |
+| `browsingData` | Deletes cookies and other site data, except those of kept sites and of sites open in a tab. |
 | `cookies` | Lists the sites that have cookies, for the settings page. |
 | `storage` | Saves your settings in this browser only. |
 | Access to all sites | Finds and rejects consent banners on the pages you visit, reads the cookies of every site and sees which sites are open in tabs. Chrome shows this as "Read and change all your data on all websites". Without it, Migalhas skips the clean-up rather than risk logging you out. |

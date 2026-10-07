@@ -183,6 +183,7 @@ class Browser {
     this.proc = proc;
     this.disconnect = disconnect;
     this.sessionNames = new Map();
+    this.targetIds = new Map();
     this.consoleLines = [];
     this.errors = [];
     this.stderr = "";
@@ -228,6 +229,7 @@ class Browser {
   async attach(targetId, name) {
     const { sessionId } = await this.send("Target.attachToTarget", { targetId, flatten: true });
     this.sessionNames.set(sessionId, name);
+    this.targetIds.set(sessionId, targetId);
     await this.send("Runtime.enable", {}, sessionId);
     return sessionId;
   }
@@ -268,12 +270,18 @@ class Browser {
             body: Buffer.from(html).toString("base64"),
           },
           session,
-        );
+        ).catch(() => {
+          // The tab was closed while a request (e.g. the favicon) was still pending: nothing to answer.
+        });
       }
     });
     await this.send("Fetch.enable", { patterns: [{ urlPattern: "*" }] }, session);
     await this.send("Page.navigate", { url }, session);
     return session;
+  }
+
+  async closeTab(session) {
+    await this.send("Target.closeTarget", { targetId: this.targetIds.get(session) });
   }
 
   // Opens a real website like a normal Chrome would: no "Headless" in the user agent, Portuguese first.
