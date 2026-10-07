@@ -66,8 +66,12 @@ export function createReport() {
       }
       const failed = checks.filter((c) => !c.ok).length;
       console.log(`\n${checks.length - failed}/${checks.length} checks passed`);
-      if (failed && browser?.stderr) {
-        console.log(`\nChrome stderr (last lines):\n${browser.stderr.split("\n").slice(-15).join("\n")}`);
+      const stderrTail = browser?.stderr ? browser.stderr.split("\n").slice(-15).join("\n") : "";
+      if (failed && stderrTail) {
+        console.log(`\nChrome stderr (last lines):\n${stderrTail}`);
+      }
+      if (process.env.GITHUB_ACTIONS) {
+        annotateFailures(checks, stderrTail);
       }
       process.exit(failed ? 1 : 0);
     },
@@ -75,6 +79,19 @@ export function createReport() {
 }
 
 // lang sets Chrome's interface language, so tests give the same texts on any computer.
+// On GitHub Actions, each failed check becomes an error annotation, shown on the run's page.
+function annotateFailures(checks, stderrTail) {
+  const escape = (text) => String(text).replace(/%/g, "%25").replace(/\r/g, "%0D").replace(/\n/g, "%0A");
+  for (const { label, ok, detail } of checks) {
+    if (!ok) {
+      console.log(`::error title=${escape(label).replace(/[:,]/g, " ")}::${escape(detail || label)}`);
+    }
+  }
+  if (stderrTail && checks.some((c) => !c.ok)) {
+    console.log(`::error title=Chrome stderr::${escape(stderrTail)}`);
+  }
+}
+
 export async function launchBrowser({ realSites = false, lang = "en-US" } = {}) {
   const chromePath = CHROME_PATHS.find((candidate) => candidate && existsSync(candidate));
   if (!chromePath) {
