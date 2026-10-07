@@ -18,6 +18,7 @@ Idioma do código e comentários: inglês
 - Testes automáticos (Chrome invisível com perfil temporário; capturas de ecrã em `tests/output/`):
   - `node tests/settings.test.mjs` — página de definições e limpeza (sem internet).
   - `node tests/banners.test.mjs` — recusa de banners com a extensão instalada, em cópias locais dos banners (`tests/fixtures/`), incluindo armadilhas (sem internet).
+  - `node tests/i18n.test.mjs` — traduções em inglês e português (sem internet; os outros testes correm o Chrome em inglês).
   - `node tests/real-sites.test.mjs` — regras nos sites de teste reais (precisa de internet; o Chrome corre sem privilégios de administrador).
 - Claude corre os testes e vê as capturas depois de cada alteração, e acrescenta testes para cada funcionalidade nova (para cada regra nova: cópia local do banner em `tests/fixtures/` e site real em `real-sites.test.mjs`). O teste manual no perfil "Migalhas teste" fica para a confirmação final.
 - No perfil de teste: chrome://extensions → ativar modo programador → "Load unpacked" → escolher a pasta do projeto.
@@ -33,6 +34,7 @@ Idioma do código e comentários: inglês
 - `content.js` — motor da recusa de banners: encontra o banner, chama a regra da CMP e confirma o que o site guardou. O `clickSafely` recusa clicar em qualquer botão com ar de "Aceitar"/"Permitir todos"
 - `rules/` — regras por plataforma de consentimento (CMP), uma por ficheiro (ex.: `rules/cookiebot.js`). Cada regra nova entra no `content_scripts` do manifest, antes do `content.js`
 - `options/` — página de definições (lista de sites com interruptor guardar/apagar e cadeado, intervalo, "Clean now")
+- `_locales/` — textos da interface em inglês (`en`, por defeito) e português (`pt_PT`). Todo o texto novo da página de definições ou do ícone entra nos dois `messages.json` (o `i18n.test.mjs` falha se faltar uma chave). As mensagens da consola ficam em inglês.
 - `icons/` — ícone: `icon.svg` é a fonte; os PNG (16/32/48/128) geram-se com `node tools/render-icons.mjs`
 - `tools/` — scripts de desenvolvimento (não fazem parte da extensão)
 - Indicador na barra: o `content.js` envia `banner-result` ao `background.js`, que mostra ✓ (recusado), ! (deixado como estava) ou ✗ (guardou mais do que o necessário) no ícone do separador; clicar no ícone abre as definições
@@ -83,4 +85,3 @@ Claude mantém esta lista: acrescentar cada problema que fique por resolver ou c
 - O `--load-extension` já não funciona no Chrome oficial (desde a versão 137): os testes instalam a extensão com `Extensions.loadUnpacked` pelo protocolo DevTools (exige `--remote-debugging-pipe` e `--enable-unsafe-extension-debugging`).
 
 # Upgrades futuros
-- Traduzir a interface para português com `chrome.i18n` (pastas `_locales/en` e `_locales/pt_PT`).

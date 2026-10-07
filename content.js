@@ -42,9 +42,8 @@ async function handleConsentBanner() {
   const savedBefore = (await rule.readConsent(helpers))?.raw;
   const result = await rule.reject(helpers);
   if (!result.done) {
-    const summary = `${rule.name} banner left alone: ${result.reason}`;
-    console.warn(`Migalhas: ${summary}.`);
-    notifyToolbar("left-alone", summary);
+    console.warn(`Migalhas: ${rule.name} banner left alone: ${result.reason}.`);
+    notifyToolbar("left-alone", rule.name);
     return;
   }
   const consent = await waitFor(async () => {
@@ -64,30 +63,28 @@ function findBanner() {
   return null;
 }
 
-// Logs the result in the page console and shows it on the toolbar icon.
+// Logs the result in the page console (in English, for debugging) and shows it on the toolbar icon
+// (the tooltip text is translated by the service worker).
 function reportResult(rule, steps, consent) {
   const clicked = steps.map((step) => `"${step}"`).join(" → ");
   if (!consent) {
-    const summary = `${rule.name}: clicked ${clicked}, but the site saved no new choice`;
-    console.warn(`Migalhas: ${summary}.`);
-    notifyToolbar("left-alone", summary);
+    console.warn(`Migalhas: ${rule.name}: clicked ${clicked}, but the site saved no new choice.`);
+    notifyToolbar("left-alone", rule.name);
   } else if (consent.necessaryOnly) {
     console.info(`Migalhas: ${rule.name} banner rejected (${clicked}). Saved: necessary cookies only.`);
     if (consent.note) {
       console.warn(`Migalhas: ${rule.name}: ${consent.note}.`);
     }
-    const note = consent.note ? `. Note: ${consent.note}` : "";
-    notifyToolbar("rejected", `${rule.name} banner rejected, necessary cookies only${note}`);
+    notifyToolbar("rejected", rule.name, Boolean(consent.note));
   } else {
-    const summary = `${rule.name} saved more than necessary cookies (${consent.details}) after ${clicked}`;
-    console.error(`Migalhas: ${summary}.`);
-    notifyToolbar("failed", summary);
+    console.error(`Migalhas: ${rule.name} saved more than necessary cookies (${consent.details}) after ${clicked}.`);
+    notifyToolbar("failed", rule.name);
   }
 }
 
-function notifyToolbar(status, summary) {
+function notifyToolbar(status, cmp, legitimateInterest = false) {
   try {
-    chrome.runtime.sendMessage({ type: "banner-result", status, summary }).catch(() => {});
+    chrome.runtime.sendMessage({ type: "banner-result", status, cmp, legitimateInterest }).catch(() => {});
   } catch {
     // Not running inside the installed extension (e.g. the real-sites test), or the extension was reloaded.
   }

@@ -24,6 +24,10 @@ Along with the cookies of a site being cleared, Migalhas also clears its other s
 | `storage` | Saves your settings in this browser only. |
 | Access to all sites | Finds and rejects consent banners on the pages you visit, reads the cookies of every site and sees which sites are open in tabs. Chrome shows this as "Read and change all your data on all websites". Without it, Migalhas skips the clean-up rather than risk logging you out. |
 
+## Languages
+
+The settings page and the toolbar tooltip are in English and Portuguese (Portugal), following the browser's language. Translations live in `_locales/<language>/messages.json`; new languages are welcome.
+
 ## Supported browsers
 
 Chrome, Edge, Brave, Opera and other Chromium-based browsers (Manifest V3).
@@ -49,7 +53,7 @@ Issues and pull requests are welcome. For larger changes, please open an issue f
 - Each consent management platform (CMP) gets its own rule file in `rules/`.
 - Request the minimum permissions in `manifest.json`, and explain any new permission in your pull request.
 - Run the automated tests (needs Node.js 22+ and Chrome; no npm). They use a temporary Chrome profile and save screenshots in `tests/output/`:
-  - `node tests/settings.test.mjs` and `node tests/banners.test.mjs` work offline, on local copies of the banners.
+  - `node tests/settings.test.mjs`, `node tests/banners.test.mjs` and `node tests/i18n.test.mjs` work offline, on local copies of the banners.
   - `node tests/real-sites.test.mjs` checks the real test sites and needs internet.
 - Test by hand in a separate Chrome profile: the clean-up deletes cookies and ends sessions.
 - To test a change, reload the extension in `chrome://extensions` and refresh the test page. Content script errors appear in the page console (F12); service worker errors appear under the extension's **service worker** link.

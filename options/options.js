@@ -28,7 +28,27 @@ let lockedSites = new Set();
 
 init();
 
+// Text in the browser's language, from _locales/<language>/messages.json.
+function t(key, ...substitutions) {
+  return chrome.i18n.getMessage(key, substitutions.map(String));
+}
+
+function translatePage() {
+  document.documentElement.lang = t("htmlLang");
+  document.title = t("pageTitle");
+  for (const element of document.querySelectorAll("[data-i18n]")) {
+    element.textContent = t(element.dataset.i18n);
+  }
+  for (const element of document.querySelectorAll("[data-i18n-placeholder]")) {
+    element.placeholder = t(element.dataset.i18nPlaceholder);
+  }
+  for (const element of document.querySelectorAll("[data-i18n-aria-label]")) {
+    element.setAttribute("aria-label", t(element.dataset.i18nAriaLabel));
+  }
+}
+
 async function init() {
+  translatePage();
   accessWarning.hidden = await hasAllSitesAccess();
   intervalSelect.value = String(await getIntervalMinutes());
   await showNextCleanup();
@@ -48,7 +68,7 @@ async function changeInterval() {
 
 async function showNextCleanup() {
   const time = await getNextCleanupTime();
-  nextCleanupText.textContent = time ? `Next clean-up: ${formatTime(time)}` : "No clean-up scheduled.";
+  nextCleanupText.textContent = time ? t("nextCleanup", formatTime(time)) : t("noCleanupScheduled");
 }
 
 async function cleanNow() {
@@ -64,12 +84,12 @@ async function cleanNow() {
 
 function describeCleanup(result) {
   if (result?.done) {
-    return `Cookies cleared at ${formatTime(new Date())}.`;
+    return t("cleanedAt", formatTime(new Date()));
   }
   if (result?.error) {
-    return `Clean-up failed: ${result.error}`;
+    return t("cleanupFailed", result.error);
   }
-  return "Clean-up skipped: Migalhas needs access to all sites.";
+  return t("cleanupSkipped");
 }
 
 // Lists every site with cookies, plus kept sites that currently have none.
@@ -94,19 +114,19 @@ function createSiteRow(site, cookieCount) {
 
   const count = document.createElement("span");
   count.className = "site-meta";
-  count.textContent = cookieCount === 1 ? "1 cookie" : `${cookieCount} cookies`;
+  count.textContent = cookieCount === 1 ? t("cookieCountOne") : t("cookieCountMany", cookieCount);
 
   const lock = document.createElement("button");
   lock.type = "button";
   lock.className = "lock";
-  lock.setAttribute("aria-label", `Lock ${site}`);
+  lock.setAttribute("aria-label", t("lockSite", site));
   lock.addEventListener("click", () => toggleLock(row));
 
   const toggle = document.createElement("input");
   toggle.type = "checkbox";
   toggle.className = "switch";
   toggle.checked = keptSites.has(site);
-  toggle.setAttribute("aria-label", `Keep cookies of ${site}`);
+  toggle.setAttribute("aria-label", t("keepSite", site));
   toggle.addEventListener("change", () => setSiteKept(site, toggle.checked));
 
   row.append(name, count, lock, toggle);
@@ -130,7 +150,7 @@ async function toggleLock(row) {
 function showLockState(row, locked) {
   const lock = row.querySelector(".lock");
   lock.setAttribute("aria-pressed", String(locked));
-  lock.title = locked ? "Locked: unlock to change this site" : "Lock this site's switch";
+  lock.title = locked ? t("lockedTitle") : t("unlockedTitle");
   lock.replaceChildren(createLockIcon(locked));
   row.querySelector(".switch").disabled = locked;
 }

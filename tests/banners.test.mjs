@@ -187,11 +187,11 @@ try {
   await checkRejected(s.imNeedsSave, ["more", "reject-all", "save"]);
   await checkLeftAlone(s.imAcceptOnly, "no reject button and no more-options button");
 
-  await checkBadge(worker, s.cbSettingsFirst, "✓", "Cookiebot banner rejected");
-  await checkBadge(worker, s.otFirstScreen, "✓", "OneTrust banner rejected");
+  await checkBadge(worker, s.cbSettingsFirst, "✓", "Cookiebot: banner rejected");
+  await checkBadge(worker, s.otFirstScreen, "✓", "OneTrust: banner rejected");
   await checkBadge(worker, s.imLikeSapo, "✓", "legitimate interest");
-  await checkBadge(worker, s.cbAcceptOnly, "!", "left alone");
-  await checkBadge(worker, s.otTrap, "!", "looks like an accept button");
+  await checkBadge(worker, s.cbAcceptOnly, "!", "Cookiebot: banner left alone");
+  await checkBadge(worker, s.otTrap, "!", "OneTrust: banner left alone");
   await checkBadge(worker, s.noBanner, "", "Migalhas");
 
   check(`${s.noBanner.label}: no Migalhas messages`, migalhasLines(s.noBanner).length === 0, migalhasLines(s.noBanner).join("\n"));

@@ -74,13 +74,21 @@ export function createReport() {
   };
 }
 
-export async function launchBrowser({ realSites = false } = {}) {
+// lang sets Chrome's interface language, so tests give the same texts on any computer.
+export async function launchBrowser({ realSites = false, lang = "en-US" } = {}) {
   const chromePath = CHROME_PATHS.find((candidate) => candidate && existsSync(candidate));
   if (!chromePath) {
     throw new Error("Chrome not found. Set the CHROME_PATH environment variable to the Chrome executable.");
   }
   const profileDir = mkdtempSync(path.join(os.tmpdir(), "migalhas-test-"));
-  const commonArgs = ["--headless", `--user-data-dir=${profileDir}`, "--no-first-run", "--no-default-browser-check", "--disable-sync"];
+  const commonArgs = [
+    "--headless",
+    `--user-data-dir=${profileDir}`,
+    `--lang=${lang}`,
+    "--no-first-run",
+    "--no-default-browser-check",
+    "--disable-sync",
+  ];
   return realSites ? launchWithPort(chromePath, profileDir, commonArgs) : launchWithPipe(chromePath, profileDir, commonArgs);
 }
 

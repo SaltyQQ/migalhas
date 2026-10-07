@@ -8,45 +8,42 @@
   <script type="module" src="options.js"></script>
 </head>
 <body>
+  <!-- Texts come from _locales/<language>/messages.json (data-i18n keys); the English here is only a fallback. -->
   <main>
     <h1>Migalhas</h1>
 
-    <p id="access-warning" class="warning" hidden>
+    <p id="access-warning" class="warning" data-i18n="accessWarning" hidden>
       Migalhas needs access to all sites to list cookies and to protect open tabs.
-      Turn it on in the extension's details (Site access: On all sites). Until then, the clean-up is paused.
     </p>
 
     <section>
-      <h2>Automatic clean-up</h2>
+      <h2 data-i18n="cleanupHeading">Automatic clean-up</h2>
       <div class="toolbar">
         <label>
-          Clear cookies every
+          <span data-i18n="intervalLabel">Clear cookies every</span>
           <select id="interval">
-            <option value="15">15 minutes</option>
-            <option value="60">1 hour</option>
-            <option value="1440">24 hours</option>
+            <option value="15" data-i18n="interval15">15 minutes</option>
+            <option value="60" data-i18n="interval60">1 hour</option>
+            <option value="1440" data-i18n="interval1440">24 hours</option>
           </select>
         </label>
-        <button id="clean-now" type="button">Clean now</button>
+        <button id="clean-now" type="button" data-i18n="cleanNow">Clean now</button>
       </div>
       <p id="next-cleanup" class="hint"></p>
       <p id="status" class="hint" role="status"></p>
     </section>
 
     <section>
-      <h2>Sites with cookies</h2>
-      <p class="hint">
-        On: cookies are kept. Off: cookies and other site data (such as localStorage) are deleted at the next
-        clean-up, unless the site is open in a tab.
-        New sites start switched off.
-      </p>
-      <p class="hint">Lock a site with its padlock so the switch can't change by accident.</p>
+      <h2 data-i18n="sitesHeading">Sites with cookies</h2>
+      <p class="hint" data-i18n="sitesHint">On: cookies are kept. Off: cookies are deleted at the next clean-up.</p>
+      <p class="hint" data-i18n="lockHint">Lock a site with its padlock so the switch can't change by accident.</p>
       <div class="toolbar">
-        <input id="search" type="search" placeholder="Search sites" aria-label="Search sites">
-        <button id="switch-all-on" type="button">Switch all on</button>
-        <button id="switch-all-off" type="button">Switch all off</button>
+        <input id="search" type="search" data-i18n-placeholder="searchPlaceholder" data-i18n-aria-label="searchPlaceholder"
+          placeholder="Search sites" aria-label="Search sites">
+        <button id="switch-all-on" type="button" data-i18n="switchAllOn">Switch all on</button>
+        <button id="switch-all-off" type="button" data-i18n="switchAllOff">Switch all off</button>
       </div>
-      <p class="hint">The buttons apply to the sites shown, so you can search first. Locked sites are skipped.</p>
+      <p class="hint" data-i18n="bulkHint">The buttons apply to the sites shown. Locked sites are skipped.</p>
       <ul id="site-list"></ul>
     </section>
   </main>

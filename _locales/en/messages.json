@@ -1,0 +1,49 @@
+{
+  "extDescription": { "message": "Rejects non-essential cookie consent banners and clears cookies automatically." },
+  "htmlLang": { "message": "en" },
+  "pageTitle": { "message": "Migalhas settings" },
+  "accessWarning": {
+    "message": "Migalhas needs access to all sites to list cookies and to protect open tabs. Turn it on in the extension's details (Site access: On all sites). Until then, the clean-up is paused."
+  },
+  "cleanupHeading": { "message": "Automatic clean-up" },
+  "intervalLabel": { "message": "Clear cookies every" },
+  "interval15": { "message": "15 minutes" },
+  "interval60": { "message": "1 hour" },
+  "interval1440": { "message": "24 hours" },
+  "cleanNow": { "message": "Clean now" },
+  "nextCleanup": { "message": "Next clean-up: $TIME$", "placeholders": { "time": { "content": "$1" } } },
+  "noCleanupScheduled": { "message": "No clean-up scheduled." },
+  "cleanedAt": { "message": "Cookies cleared at $TIME$.", "placeholders": { "time": { "content": "$1" } } },
+  "cleanupFailed": { "message": "Clean-up failed: $ERROR$", "placeholders": { "error": { "content": "$1" } } },
+  "cleanupSkipped": { "message": "Clean-up skipped: Migalhas needs access to all sites." },
+  "sitesHeading": { "message": "Sites with cookies" },
+  "sitesHint": {
+    "message": "On: cookies are kept. Off: cookies and other site data (such as localStorage) are deleted at the next clean-up, unless the site is open in a tab. New sites start switched off."
+  },
+  "lockHint": { "message": "Lock a site with its padlock so the switch can't change by accident." },
+  "searchPlaceholder": { "message": "Search sites" },
+  "switchAllOn": { "message": "Switch all on" },
+  "switchAllOff": { "message": "Switch all off" },
+  "bulkHint": { "message": "The buttons apply to the sites shown, so you can search first. Locked sites are skipped." },
+  "cookieCountOne": { "message": "1 cookie" },
+  "cookieCountMany": { "message": "$COUNT$ cookies", "placeholders": { "count": { "content": "$1" } } },
+  "lockSite": { "message": "Lock $SITE$", "placeholders": { "site": { "content": "$1" } } },
+  "keepSite": { "message": "Keep cookies of $SITE$", "placeholders": { "site": { "content": "$1" } } },
+  "lockedTitle": { "message": "Locked: unlock to change this site" },
+  "unlockedTitle": { "message": "Lock this site's switch" },
+  "badgeRejected": {
+    "message": "Migalhas — $CMP$: banner rejected, necessary cookies only.",
+    "placeholders": { "cmp": { "content": "$1" } }
+  },
+  "badgeLegitimateInterest": {
+    "message": "Note: the site still uses \"legitimate interest\" without consent (see the console, F12)."
+  },
+  "badgeLeftAlone": {
+    "message": "Migalhas — $CMP$: banner left alone (see the console, F12).",
+    "placeholders": { "cmp": { "content": "$1" } }
+  },
+  "badgeFailed": {
+    "message": "Migalhas — $CMP$: the site saved more than necessary cookies (see the console, F12).",
+    "placeholders": { "cmp": { "content": "$1" } }
+  }
+}

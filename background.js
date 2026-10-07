@@ -7,11 +7,11 @@ import { getCookieSites, hasAllSitesAccess, loadKeptSites, siteToOrigin } from "
 // Site data cleared along with the cookies of a site (where sites may keep logins too).
 const SITE_DATA = { localStorage: true, indexedDB: true, cacheStorage: true, serviceWorkers: true };
 
-// Toolbar badge for each banner result sent by the content script.
+// Toolbar badge and tooltip (a key in _locales) for each banner result sent by the content script.
 const BADGES = {
-  rejected: { text: "✓", color: "#1e8e3e" },
-  "left-alone": { text: "!", color: "#e37400" },
-  failed: { text: "✗", color: "#d93025" },
+  rejected: { text: "✓", color: "#1e8e3e", title: "badgeRejected" },
+  "left-alone": { text: "!", color: "#e37400", title: "badgeLeftAlone" },
+  failed: { text: "✗", color: "#d93025", title: "badgeFailed" },
 };
 
 chrome.runtime.onInstalled.addListener(initialize);
@@ -50,14 +50,18 @@ function handleMessage(message, sender, sendResponse) {
   return true; // Keeps sendResponse valid until the clean-up finishes.
 }
 
-async function showBannerResult(tabId, { status, summary }) {
+async function showBannerResult(tabId, { status, cmp, legitimateInterest }) {
   const badge = BADGES[status];
   if (tabId === undefined || !badge) {
     return;
   }
+  let title = chrome.i18n.getMessage(badge.title, [String(cmp).slice(0, 40)]);
+  if (status === "rejected" && legitimateInterest) {
+    title += ` ${chrome.i18n.getMessage("badgeLegitimateInterest")}`;
+  }
   await chrome.action.setBadgeText({ tabId, text: badge.text });
   await chrome.action.setBadgeBackgroundColor({ tabId, color: badge.color });
-  await chrome.action.setTitle({ tabId, title: `Migalhas: ${String(summary).slice(0, 300)}` });
+  await chrome.action.setTitle({ tabId, title });
 }
 
 // A badge belongs to the page it was set on, so clear it when the tab loads another page.

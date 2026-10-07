@@ -1,0 +1,49 @@
+{
+  "extDescription": { "message": "Recusa os banners de cookies (só os necessários) e limpa os cookies automaticamente." },
+  "htmlLang": { "message": "pt-PT" },
+  "pageTitle": { "message": "Definições do Migalhas" },
+  "accessWarning": {
+    "message": "O Migalhas precisa de acesso a todos os sites para listar os cookies e proteger os separadores abertos. Para o ativar: detalhes da extensão → Acesso ao site → Em todos os sites. Até lá, a limpeza fica em pausa."
+  },
+  "cleanupHeading": { "message": "Limpeza automática" },
+  "intervalLabel": { "message": "Limpar cookies a cada" },
+  "interval15": { "message": "15 minutos" },
+  "interval60": { "message": "1 hora" },
+  "interval1440": { "message": "24 horas" },
+  "cleanNow": { "message": "Limpar agora" },
+  "nextCleanup": { "message": "Próxima limpeza: $TIME$", "placeholders": { "time": { "content": "$1" } } },
+  "noCleanupScheduled": { "message": "Nenhuma limpeza agendada." },
+  "cleanedAt": { "message": "Cookies limpos em $TIME$.", "placeholders": { "time": { "content": "$1" } } },
+  "cleanupFailed": { "message": "A limpeza falhou: $ERROR$", "placeholders": { "error": { "content": "$1" } } },
+  "cleanupSkipped": { "message": "Limpeza não feita: o Migalhas precisa de acesso a todos os sites." },
+  "sitesHeading": { "message": "Sites com cookies" },
+  "sitesHint": {
+    "message": "Ligado: os cookies são guardados. Desligado: os cookies e outros dados do site (como o localStorage) são apagados na próxima limpeza, exceto se o site estiver aberto num separador. Os sites novos começam desligados."
+  },
+  "lockHint": { "message": "O cadeado bloqueia o interruptor de um site, para não mudar por engano." },
+  "searchPlaceholder": { "message": "Pesquisar sites" },
+  "switchAllOn": { "message": "Ligar todos" },
+  "switchAllOff": { "message": "Desligar todos" },
+  "bulkHint": { "message": "Os botões aplicam-se aos sites mostrados, por isso dá para pesquisar primeiro. Os sites bloqueados não mudam." },
+  "cookieCountOne": { "message": "1 cookie" },
+  "cookieCountMany": { "message": "$COUNT$ cookies", "placeholders": { "count": { "content": "$1" } } },
+  "lockSite": { "message": "Bloquear $SITE$", "placeholders": { "site": { "content": "$1" } } },
+  "keepSite": { "message": "Guardar os cookies de $SITE$", "placeholders": { "site": { "content": "$1" } } },
+  "lockedTitle": { "message": "Bloqueado: desbloquear para mudar este site" },
+  "unlockedTitle": { "message": "Bloquear o interruptor deste site" },
+  "badgeRejected": {
+    "message": "Migalhas — $CMP$: banner recusado, só cookies necessários.",
+    "placeholders": { "cmp": { "content": "$1" } }
+  },
+  "badgeLegitimateInterest": {
+    "message": "Atenção: o site continua a usar \"interesse legítimo\" sem consentimento (ver a consola, F12)."
+  },
+  "badgeLeftAlone": {
+    "message": "Migalhas — $CMP$: banner deixado como estava (ver a consola, F12).",
+    "placeholders": { "cmp": { "content": "$1" } }
+  },
+  "badgeFailed": {
+    "message": "Migalhas — $CMP$: o site guardou mais do que os cookies necessários (ver a consola, F12).",
+    "placeholders": { "cmp": { "content": "$1" } }
+  }
+}
