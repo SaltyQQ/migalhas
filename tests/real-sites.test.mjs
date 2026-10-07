@@ -14,6 +14,20 @@ const SITES = [
     savedChoice: `decodeURIComponent(document.cookie.split("; ").find((c) => c.startsWith("CookieConsent="))?.slice(14) ?? "")`,
     isNecessaryOnly: (saved) => /necessary:true,preferences:false,statistics:false,marketing:false/.test(saved),
   },
+  {
+    name: "ikea.com/pt (OneTrust)",
+    url: "https://www.ikea.com/pt/pt/",
+    screenshot: "real-ikea.png",
+    bannerSelector: "#onetrust-banner-sdk",
+    savedChoice: `new URLSearchParams(document.cookie.split("; ").find((c) => c.startsWith("OptanonConsent="))?.slice(15) ?? "").get("groups") ?? ""`,
+    // Group 1 (C0001 on most sites) is "strictly necessary" and always on.
+    isNecessaryOnly: (groups) =>
+      groups !== "" &&
+      groups.split(",").every((entry) => {
+        const [id, on] = entry.split(":");
+        return on === "0" || ["1", "C0001"].includes(id);
+      }),
+  },
 ];
 
 const report = createReport();
@@ -35,11 +49,23 @@ try {
     check(`${site.name}: Migalhas rejected the banner`, line.includes("Saved: necessary cookies only"), line);
     const saved = await browser.evaluate(page, site.savedChoice);
     check(`${site.name}: the site saved necessary cookies only`, site.isNecessaryOnly(saved), saved);
-    const bannerShown = await browser.evaluate(
-      page,
-      `(() => { const banner = document.querySelector(${JSON.stringify(site.bannerSelector)}); return !!banner && banner.getBoundingClientRect().width > 0; })()`,
-    );
-    check(`${site.name}: banner closed`, !bannerShown);
+    // Some banners close with an animation, so wait for them to go.
+    const bannerClosed = await waitFor(
+      () =>
+        browser.evaluate(
+          page,
+          `(() => {
+            const banner = document.querySelector(${JSON.stringify(site.bannerSelector)});
+            if (!banner) return true;
+            const style = getComputedStyle(banner);
+            return banner.getBoundingClientRect().width === 0 || style.display === "none" ||
+              style.visibility === "hidden" || Number(style.opacity) === 0;
+          })()`,
+        ),
+      `the banner on ${site.url} to close`,
+      5000,
+    ).catch(() => false);
+    check(`${site.name}: banner closed`, bannerClosed);
     await browser.screenshot(page, site.screenshot);
   }
 } catch (error) {

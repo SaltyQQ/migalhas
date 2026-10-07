@@ -66,7 +66,7 @@ Idioma do código e comentários: inglês
 
 # Sites de teste
 Um site por plataforma de consentimento (CMP), para testar a regra de cada uma em `rules/`. Todos em português, por isso também testam o texto dos botões em PT. CMP confirmada no HTML de cada site em 2026-09-26 (os sites podem mudar de CMP).
-- OneTrust: https://www.ikea.com/pt/pt/
+- OneTrust: https://www.ikea.com/pt/pt/ (regra feita: `rules/onetrust.js`. "Rejeitar todos os cookies" está no 1.º ecrã; as categorias são numeradas 1–4 em vez de C0001–C0004, por isso as opcionais são as que têm interruptor no painel; o banner fecha com animação)
 - Cookiebot: https://www.continente.pt (regra feita: `rules/cookiebot.js`. O 1.º ecrã só mostra "Personalizar" e "Permitir todos"; "Rejeitar todos" aparece depois de "Personalizar")
 - InMobi Choice (ex-Quantcast): https://www.sapo.pt
 
