@@ -1,5 +1,7 @@
 # Migalhas
 
+[![Tests](https://github.com/SaltyQQ/migalhas/actions/workflows/tests.yml/badge.svg)](https://github.com/SaltyQQ/migalhas/actions/workflows/tests.yml)
+
 A browser extension for Chrome and other Chromium-based browsers that says "no" to cookie consent banners and clears cookies on a schedule. *Migalhas* is Portuguese for "crumbs".
 
 > **Status:** early development. Automatic cookie clean-up, the settings page and banner rejection for Cookiebot, OneTrust and InMobi Choice work; more consent platforms are coming.

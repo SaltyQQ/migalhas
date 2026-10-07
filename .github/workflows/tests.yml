@@ -1,0 +1,38 @@
+# Runs the offline tests (no real websites) on every push and pull request.
+# The real-sites test is left out: it depends on third-party sites that change over time.
+name: Tests
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  offline-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+
+      - name: Allow Chrome's sandbox on Ubuntu
+        # Ubuntu 24.04 blocks the unprivileged user namespaces that Chrome's sandbox needs.
+        run: sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+
+      - name: Settings page and clean-up
+        run: node tests/settings.test.mjs
+
+      - name: Banner rejection (local copies of the banners)
+        run: node tests/banners.test.mjs
+
+      - name: Translations
+        run: node tests/i18n.test.mjs
+
+      - name: Keep the screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: screenshots
+          path: tests/output/
+          if-no-files-found: ignore

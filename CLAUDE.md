@@ -20,6 +20,7 @@ Idioma do código e comentários: inglês
   - `node tests/banners.test.mjs` — recusa de banners com a extensão instalada, em cópias locais dos banners (`tests/fixtures/`), incluindo armadilhas (sem internet).
   - `node tests/i18n.test.mjs` — traduções em inglês e português (sem internet; os outros testes correm o Chrome em inglês).
   - `node tests/real-sites.test.mjs` — regras nos sites de teste reais (precisa de internet; o Chrome corre sem privilégios de administrador).
+- No GitHub, `.github/workflows/tests.yml` corre os testes offline a cada push (Ubuntu + Chrome); o de sites reais não, porque depende de sites de terceiros. Ver o resultado: separador "Actions" do repositório ou o selo "Tests" no README.
 - Claude corre os testes e vê as capturas depois de cada alteração, e acrescenta testes para cada funcionalidade nova (para cada regra nova: cópia local do banner em `tests/fixtures/` e site real em `real-sites.test.mjs`). O teste manual no perfil "Migalhas teste" fica para a confirmação final.
 - No perfil de teste: chrome://extensions → ativar modo programador → "Load unpacked" → escolher a pasta do projeto.
 - Depois de cada alteração: carregar no botão de recarregar da extensão em chrome://extensions e fazer refresh à página de teste.
