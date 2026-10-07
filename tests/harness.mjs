@@ -31,8 +31,9 @@ export const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 export const sameSet = (a, b) => JSON.stringify([...(a ?? [])].sort()) === JSON.stringify([...b].sort());
 
-// Polls fn until it returns a truthy value, then returns that value.
-export async function waitFor(fn, label, timeoutMs = 10000) {
+// Polls fn until it returns a truthy value, then returns that value. The default timeout leaves room
+// for slow machines, such as a GitHub runner starting Chrome for the first time.
+export async function waitFor(fn, label, timeoutMs = 20000) {
   const start = Date.now();
   let lastError;
   while (Date.now() - start < timeoutMs) {
