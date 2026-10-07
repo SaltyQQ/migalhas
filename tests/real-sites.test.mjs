@@ -28,6 +28,27 @@ const SITES = [
         return on === "0" || ["1", "C0001"].includes(id);
       }),
   },
+  {
+    name: "sapo.pt (InMobi Choice)",
+    url: "https://www.sapo.pt/",
+    screenshot: "real-sapo.png",
+    bannerSelector: '#qc-cmp2-container button[mode="primary"]',
+    // Read through the standard TCF API; "legitimate interest" purposes are only reported (see CLAUDE.md).
+    savedChoice: `new Promise((resolve) => {
+      if (!window.__tcfapi) return resolve("no __tcfapi");
+      const on = (map) => Object.keys(map ?? {}).filter((key) => map[key]);
+      __tcfapi("getTCData", 2, (data) => resolve(JSON.stringify({ saved: !!data.tcString, consents: on(data.purpose?.consents),
+        features: on(data.specialFeatureOptins), vendors: on(data.vendor?.consents).length })));
+    })`,
+    isNecessaryOnly: (saved) => {
+      try {
+        const choice = JSON.parse(saved);
+        return choice.saved && choice.consents.length === 0 && choice.features.length === 0 && choice.vendors === 0;
+      } catch {
+        return false;
+      }
+    },
+  },
 ];
 
 const report = createReport();

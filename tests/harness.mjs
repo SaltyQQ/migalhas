@@ -343,11 +343,21 @@ class Browser {
     await Promise.race([this.send("Browser.close").catch(() => {}), sleep(5000)]);
     this.proc?.kill();
     this.disconnect();
-    await sleep(1000);
-    try {
-      rmSync(this.profileDir, { recursive: true, force: true, maxRetries: 10, retryDelay: 500 });
-    } catch (error) {
-      console.warn(`Could not remove the temporary profile ${this.profileDir}: ${error.message}`);
+    await this.removeProfile();
+  }
+
+  // In real-sites mode Chrome isn't our child process, so it may still be closing: retry for a while.
+  async removeProfile() {
+    let lastError;
+    for (let attempt = 0; attempt < 15; attempt++) {
+      await sleep(1000);
+      try {
+        rmSync(this.profileDir, { recursive: true, force: true });
+        return;
+      } catch (error) {
+        lastError = error;
+      }
     }
+    console.warn(`Could not remove the temporary profile ${this.profileDir}: ${lastError.message}`);
   }
 }

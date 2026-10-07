@@ -4,6 +4,7 @@
 // Run from the project folder with: node tests/banners.test.mjs
 
 import { cookiebotPage } from "./fixtures/cookiebot.mjs";
+import { inMobiPage } from "./fixtures/inmobi.mjs";
 import { oneTrustPage } from "./fixtures/onetrust.mjs";
 import { createReport, launchBrowser, waitFor } from "./harness.mjs";
 
@@ -24,6 +25,17 @@ const CMPS = {
     })()`,
     isNecessaryOnly: (saved) => saved === "1:1,2:0,3:0,4:0",
     acceptButtons: ["onetrust-accept-btn-handler", "accept-recommended-btn-handler"],
+  },
+  inmobi: {
+    savedChoice: `new Promise((resolve) => __tcfapi("getTCData", 2, (data) => resolve(data.tcString ? JSON.stringify({
+      consents: Object.keys(data.purpose.consents).filter((id) => data.purpose.consents[id]),
+      vendors: Object.keys(data.vendor.consents).filter((id) => data.vendor.consents[id]).length,
+    }) : null)))`,
+    isNecessaryOnly: (saved) => {
+      const choice = JSON.parse(saved ?? "null");
+      return choice !== null && choice.consents.length === 0 && choice.vendors === 0;
+    },
+    acceptButtons: ["accept", "accept-all"],
   },
 };
 
@@ -74,6 +86,25 @@ const SCENARIOS = {
     url: "https://onetrust-trap.example/",
     label: 'OneTrust whose reject button says "Aceitar todos"',
     html: oneTrustPage({ hasSettings: false, rejectLabel: "Aceitar todos" }),
+  },
+  imLikeSapo: { cmp: "inmobi", url: "https://inmobi.example/", label: "InMobi Choice like sapo.pt", html: inMobiPage() },
+  imFirstScreen: {
+    cmp: "inmobi",
+    url: "https://inmobi-first-screen.example/",
+    label: 'InMobi Choice with "REJEITAR" on the first screen',
+    html: inMobiPage({ rejectOnFirstScreen: true }),
+  },
+  imNeedsSave: {
+    cmp: "inmobi",
+    url: "https://inmobi-needs-save.example/",
+    label: 'InMobi Choice where "REJEITAR TODOS" still needs "GRAVAR"',
+    html: inMobiPage({ rejectSaves: false }),
+  },
+  imAcceptOnly: {
+    cmp: "inmobi",
+    url: "https://inmobi-accept-only.example/",
+    label: 'InMobi Choice with only "ACEITAR"',
+    html: inMobiPage({ hasMoreOptions: false }),
   },
   noBanner: { url: "https://no-banner.example/", label: "Page without a banner", html: "<!doctype html><title>No banner</title><p>Olá</p>" },
 };
@@ -131,6 +162,13 @@ try {
   await checkRejected(s.otPreticked, ["onetrust-pc-btn-handler", "ot-group-id-3", "ot-group-id-4", "save-preference-btn-handler"]);
   await checkLeftAlone(s.otTrap, "looks like an accept button");
   check(`${s.otTrap.label}: logged the refused click`, migalhasLines(s.otTrap).some((line) => line.includes('refused to click "Aceitar todos"')));
+
+  await checkRejected(s.imLikeSapo, ["more", "reject-all"]);
+  const legitimateInterestNote = await waitForLog(s.imLikeSapo, "legitimate interest");
+  check(`${s.imLikeSapo.label}: warned that "legitimate interest" is still used`, legitimateInterestNote.includes("purposes 2, 7"), legitimateInterestNote);
+  await checkRejected(s.imFirstScreen, ["reject-first"]);
+  await checkRejected(s.imNeedsSave, ["more", "reject-all", "save"]);
+  await checkLeftAlone(s.imAcceptOnly, "no reject button and no more-options button");
 
   check(`${s.noBanner.label}: no Migalhas messages`, migalhasLines(s.noBanner).length === 0, migalhasLines(s.noBanner).join("\n"));
 

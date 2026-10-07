@@ -68,13 +68,14 @@ Idioma do código e comentários: inglês
 Um site por plataforma de consentimento (CMP), para testar a regra de cada uma em `rules/`. Todos em português, por isso também testam o texto dos botões em PT. CMP confirmada no HTML de cada site em 2026-09-26 (os sites podem mudar de CMP).
 - OneTrust: https://www.ikea.com/pt/pt/ (regra feita: `rules/onetrust.js`. "Rejeitar todos os cookies" está no 1.º ecrã; as categorias são numeradas 1–4 em vez de C0001–C0004, por isso as opcionais são as que têm interruptor no painel; o banner fecha com animação)
 - Cookiebot: https://www.continente.pt (regra feita: `rules/cookiebot.js`. O 1.º ecrã só mostra "Personalizar" e "Permitir todos"; "Rejeitar todos" aparece depois de "Personalizar")
-- InMobi Choice (ex-Quantcast): https://www.sapo.pt
+- InMobi Choice (ex-Quantcast): https://www.sapo.pt (regra feita: `rules/inmobi.js`. Botões sem id, só `mode="primary|secondary|link"`, por isso o botão de rejeitar é reconhecido pelo texto. 1.º ecrã: "MAIS OPÇÕES" e "ACEITAR"; "REJEITAR TODOS" no ecrã seguinte grava e fecha. A escolha lê-se pela API TCF (`readTcfConsent` no `content.js`), reutilizável para outras CMPs TCF)
 
 Para o banner voltar a aparecer depois de recusado: usar janela anónima (ativar "Permitir no modo de navegação anónima" nos detalhes da extensão) ou apagar os cookies desse site.
 
 # Problemas conhecidos
 Claude mantém esta lista: acrescentar cada problema que fique por resolver ou cuja causa não seja óbvia (sintoma → causa → estado). Apagar a entrada quando deixar de se aplicar.
 - Testes: o Chrome lançado pelos testes fechava logo (código 0) e não respondia → o VS Code corre como administrador e o Chrome recusa-se a correr assim: relança-se sem privilégios num processo novo, que perde a ligação do teste → contornado: o modo offline usa `--do-not-de-elevate` (seguro, porque não abre sites reais); o modo de sites reais deixa o Chrome relançar-se sem privilégios e liga-se por porta. Se o VS Code deixar de correr como administrador, tudo continua a funcionar.
+- SAPO (InMobi): depois de "Rejeitar todos", os consentimentos ficam todos recusados, mas as finalidades 2, 7, 8, 9, 10 e 11 continuam ativas por "interesse legítimo" (390 fornecedores) → testado em 2026-10-07: nem "REJEITAR TUDO" no separador "Interesses legítimos" + "Gravar", nem abrindo primeiro uma finalidade, mudam isso (só muda o número do ecrã na TC string) → por resolver: a extensão avisa na consola (`console.warn`) em vez de registar erro. Próxima ideia: ver se cada parceiro/finalidade tem um interruptor "Opor-se" ao expandir.
 - O `--load-extension` já não funciona no Chrome oficial (desde a versão 137): os testes instalam a extensão com `Extensions.loadUnpacked` pelo protocolo DevTools (exige `--remote-debugging-pipe` e `--enable-unsafe-extension-debugging`).
 
 # Upgrades futuros

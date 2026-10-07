@@ -6,6 +6,7 @@
 const BANNER_WAIT_MS = 15000;
 const CONSENT_WAIT_MS = 5000;
 const POLL_MS = 250;
+const TCF_TIMEOUT_MS = 1000;
 
 // Labels that mean "accept", in Portuguese, English and neighbouring languages.
 const ACCEPT_LABELS = [
@@ -28,7 +29,7 @@ const ACCEPT_LABELS = [
 // Reject buttons that mention accepting, e.g. "Continuar sem aceitar" ("continue without accepting").
 const WITHOUT_ACCEPTING = [/\bsem aceitar\b/i, /\bwithout accepting\b/i, /\bsin aceptar\b/i, /\bsans accepter\b/i, /\bohne zu akzeptieren\b/i];
 
-const helpers = { clickSafely, isVisible, labelOf, waitFor };
+const helpers = { clickSafely, isVisible, labelOf, waitFor, readTcfConsent };
 
 handleConsentBanner();
 
@@ -38,14 +39,14 @@ async function handleConsentBanner() {
     return; // No supported banner on this page.
   }
   const { rule } = match;
-  const savedBefore = rule.readConsent()?.raw;
+  const savedBefore = (await rule.readConsent(helpers))?.raw;
   const result = await rule.reject(helpers);
   if (!result.done) {
     console.warn(`Migalhas: ${rule.name} banner left alone: ${result.reason}.`);
     return;
   }
-  const consent = await waitFor(() => {
-    const saved = rule.readConsent();
+  const consent = await waitFor(async () => {
+    const saved = await rule.readConsent(helpers);
     return saved && saved.raw !== savedBefore ? saved : null;
   }, CONSENT_WAIT_MS);
   reportResult(rule, result.steps, consent);
@@ -67,6 +68,9 @@ function reportResult(rule, steps, consent) {
     console.warn(`Migalhas: ${rule.name}: clicked ${clicked}, but the site saved no new choice.`);
   } else if (consent.necessaryOnly) {
     console.info(`Migalhas: ${rule.name} banner rejected (${clicked}). Saved: necessary cookies only.`);
+    if (consent.note) {
+      console.warn(`Migalhas: ${rule.name}: ${consent.note}.`);
+    }
   } else {
     console.error(`Migalhas: ${rule.name} saved more than necessary cookies (${consent.details}) after ${clicked}.`);
   }
@@ -108,11 +112,73 @@ function isVisible(element) {
   return width > 0 && height > 0 && style.visibility !== "hidden" && style.display !== "none";
 }
 
-// Polls fn until it returns a truthy value; returns null after timeoutMs.
+// Reads the choice saved by any IAB TCF consent platform through its standard API (__tcfapi).
+// Purposes accepted by consent count as "more than necessary"; purposes the site still uses on the
+// basis of "legitimate interest" are reported as a note, since banners don't always let us object.
+async function readTcfConsent() {
+  const data = await callTcfApi("getTCData");
+  if (!data?.tcString) {
+    return null;
+  }
+  const allowed = [
+    ...enabledKeys(data.purpose?.consents).map((id) => `purpose ${id}`),
+    ...enabledKeys(data.specialFeatureOptins).map((id) => `special feature ${id}`),
+  ];
+  const vendors = enabledKeys(data.vendor?.consents).length;
+  if (vendors > 0) {
+    allowed.push(`${vendors} vendors`);
+  }
+  const legitimateInterest = enabledKeys(data.purpose?.legitimateInterests);
+  return {
+    raw: data.tcString,
+    necessaryOnly: allowed.length === 0,
+    details: allowed.length > 0 ? `${allowed.join(", ")} allowed` : "necessary only",
+    note:
+      legitimateInterest.length > 0
+        ? `the site still uses "legitimate interest" (no consent) for purposes ${legitimateInterest.join(", ")}`
+        : null,
+  };
+}
+
+function enabledKeys(map) {
+  return Object.keys(map ?? {}).filter((key) => map[key]);
+}
+
+// Content scripts can't call page functions, so use the TCF postMessage protocol instead.
+function callTcfApi(command) {
+  return new Promise((resolve) => {
+    const callId = `migalhas-${Date.now()}-${Math.random()}`;
+    const timer = setTimeout(() => finish(null), TCF_TIMEOUT_MS);
+    function onMessage(event) {
+      const message = typeof event.data === "string" ? parseJson(event.data) : event.data;
+      const reply = message?.__tcfapiReturn;
+      if (reply?.callId === callId) {
+        finish(reply.success ? reply.returnValue : null);
+      }
+    }
+    function finish(value) {
+      clearTimeout(timer);
+      window.removeEventListener("message", onMessage);
+      resolve(value);
+    }
+    window.addEventListener("message", onMessage);
+    window.postMessage({ __tcfapiCall: { command, version: 2, callId } }, "*");
+  });
+}
+
+function parseJson(text) {
+  try {
+    return JSON.parse(text);
+  } catch {
+    return null;
+  }
+}
+
+// Polls fn (which may be async) until it returns a truthy value; returns null after timeoutMs.
 async function waitFor(fn, timeoutMs) {
   const deadline = Date.now() + timeoutMs;
   while (Date.now() < deadline) {
-    const value = fn();
+    const value = await fn();
     if (value) {
       return value;
     }

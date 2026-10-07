@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Migalhas",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "description": "Rejects non-essential cookie consent banners and clears cookies automatically.",
   "permissions": ["alarms", "browsingData", "cookies", "storage"],
   "host_permissions": ["http://*/*", "https://*/*"],
@@ -16,7 +16,7 @@
   "content_scripts": [
     {
       "matches": ["http://*/*", "https://*/*"],
-      "js": ["rules/cookiebot.js", "rules/onetrust.js", "content.js"],
+      "js": ["rules/cookiebot.js", "rules/onetrust.js", "rules/inmobi.js", "content.js"],
       "run_at": "document_idle"
     }
   ]
