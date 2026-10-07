@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
+  <!-- A cookie with a bite taken out and crumbs falling: "migalhas" means "crumbs". -->
+  <defs>
+    <mask id="bite">
+      <rect width="128" height="128" fill="#fff"/>
+      <circle cx="106" cy="24" r="20" fill="#000"/>
+      <circle cx="86" cy="12" r="12" fill="#000"/>
+      <circle cx="118" cy="44" r="12" fill="#000"/>
+    </mask>
+  </defs>
+  <g mask="url(#bite)">
+    <circle cx="60" cy="66" r="54" fill="#d9a066" stroke="#8b5a2b" stroke-width="7"/>
+    <circle cx="38" cy="48" r="8" fill="#5c3a1e"/>
+    <circle cx="70" cy="82" r="9" fill="#5c3a1e"/>
+    <circle cx="36" cy="90" r="7" fill="#5c3a1e"/>
+    <circle cx="80" cy="50" r="6" fill="#5c3a1e"/>
+  </g>
+  <circle cx="112" cy="78" r="7" fill="#d9a066" stroke="#8b5a2b" stroke-width="4"/>
+  <circle cx="118" cy="104" r="5" fill="#d9a066" stroke="#8b5a2b" stroke-width="3"/>
+</svg>

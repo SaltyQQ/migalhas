@@ -33,6 +33,9 @@ Idioma do código e comentários: inglês
 - `content.js` — motor da recusa de banners: encontra o banner, chama a regra da CMP e confirma o que o site guardou. O `clickSafely` recusa clicar em qualquer botão com ar de "Aceitar"/"Permitir todos"
 - `rules/` — regras por plataforma de consentimento (CMP), uma por ficheiro (ex.: `rules/cookiebot.js`). Cada regra nova entra no `content_scripts` do manifest, antes do `content.js`
 - `options/` — página de definições (lista de sites com interruptor guardar/apagar e cadeado, intervalo, "Clean now")
+- `icons/` — ícone: `icon.svg` é a fonte; os PNG (16/32/48/128) geram-se com `node tools/render-icons.mjs`
+- `tools/` — scripts de desenvolvimento (não fazem parte da extensão)
+- Indicador na barra: o `content.js` envia `banner-result` ao `background.js`, que mostra ✓ (recusado), ! (deixado como estava) ou ✗ (guardou mais do que o necessário) no ícone do separador; clicar no ícone abre as definições
 - `tests/` — testes automáticos: `harness.mjs` lança e controla o Chrome; um `*.test.mjs` por funcionalidade; `fixtures/` com cópias locais dos banners
 
 # Regras importantes

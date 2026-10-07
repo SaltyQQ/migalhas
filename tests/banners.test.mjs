@@ -137,9 +137,26 @@ async function checkLeftAlone(scenario, expectedLog) {
   check(`${scenario.label}: no choice saved`, (await readSaved(scenario)) === null);
 }
 
+// The toolbar badge and tooltip of the scenario's tab, read in the service worker.
+const readBadge = (worker, scenario) =>
+  browser.evaluate(
+    worker,
+    `chrome.tabs.query({ url: ${JSON.stringify(`${scenario.url}*`)} }).then(([tab]) =>
+      Promise.all([chrome.action.getBadgeText({ tabId: tab.id }), chrome.action.getTitle({ tabId: tab.id })]))`,
+  );
+
+async function checkBadge(worker, scenario, expectedText, expectedTitle) {
+  const [text, title] = await waitFor(async () => {
+    const badge = await readBadge(worker, scenario);
+    return badge[0] === expectedText ? badge : null;
+  }, `badge "${expectedText}" on ${scenario.url}`).catch(async () => readBadge(worker, scenario));
+  check(`${scenario.label}: toolbar badge "${expectedText}"`, text === expectedText && title.includes(expectedTitle), `${text} / ${title}`);
+}
+
 try {
   browser = await launchBrowser();
-  await browser.loadExtension();
+  const extensionId = await browser.loadExtension();
+  const worker = await browser.attachServiceWorker(extensionId);
   for (const scenario of Object.values(SCENARIOS)) {
     scenario.session = await browser.openOfflineTab(scenario.url, scenario.html);
   }
@@ -169,6 +186,13 @@ try {
   await checkRejected(s.imFirstScreen, ["reject-first"]);
   await checkRejected(s.imNeedsSave, ["more", "reject-all", "save"]);
   await checkLeftAlone(s.imAcceptOnly, "no reject button and no more-options button");
+
+  await checkBadge(worker, s.cbSettingsFirst, "✓", "Cookiebot banner rejected");
+  await checkBadge(worker, s.otFirstScreen, "✓", "OneTrust banner rejected");
+  await checkBadge(worker, s.imLikeSapo, "✓", "legitimate interest");
+  await checkBadge(worker, s.cbAcceptOnly, "!", "left alone");
+  await checkBadge(worker, s.otTrap, "!", "looks like an accept button");
+  await checkBadge(worker, s.noBanner, "", "Migalhas");
 
   check(`${s.noBanner.label}: no Migalhas messages`, migalhasLines(s.noBanner).length === 0, migalhasLines(s.noBanner).join("\n"));
 

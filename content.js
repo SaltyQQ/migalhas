@@ -42,7 +42,9 @@ async function handleConsentBanner() {
   const savedBefore = (await rule.readConsent(helpers))?.raw;
   const result = await rule.reject(helpers);
   if (!result.done) {
-    console.warn(`Migalhas: ${rule.name} banner left alone: ${result.reason}.`);
+    const summary = `${rule.name} banner left alone: ${result.reason}`;
+    console.warn(`Migalhas: ${summary}.`);
+    notifyToolbar("left-alone", summary);
     return;
   }
   const consent = await waitFor(async () => {
@@ -62,17 +64,32 @@ function findBanner() {
   return null;
 }
 
+// Logs the result in the page console and shows it on the toolbar icon.
 function reportResult(rule, steps, consent) {
   const clicked = steps.map((step) => `"${step}"`).join(" → ");
   if (!consent) {
-    console.warn(`Migalhas: ${rule.name}: clicked ${clicked}, but the site saved no new choice.`);
+    const summary = `${rule.name}: clicked ${clicked}, but the site saved no new choice`;
+    console.warn(`Migalhas: ${summary}.`);
+    notifyToolbar("left-alone", summary);
   } else if (consent.necessaryOnly) {
     console.info(`Migalhas: ${rule.name} banner rejected (${clicked}). Saved: necessary cookies only.`);
     if (consent.note) {
       console.warn(`Migalhas: ${rule.name}: ${consent.note}.`);
     }
+    const note = consent.note ? `. Note: ${consent.note}` : "";
+    notifyToolbar("rejected", `${rule.name} banner rejected, necessary cookies only${note}`);
   } else {
-    console.error(`Migalhas: ${rule.name} saved more than necessary cookies (${consent.details}) after ${clicked}.`);
+    const summary = `${rule.name} saved more than necessary cookies (${consent.details}) after ${clicked}`;
+    console.error(`Migalhas: ${summary}.`);
+    notifyToolbar("failed", summary);
+  }
+}
+
+function notifyToolbar(status, summary) {
+  try {
+    chrome.runtime.sendMessage({ type: "banner-result", status, summary }).catch(() => {});
+  } catch {
+    // Not running inside the installed extension (e.g. the real-sites test), or the extension was reloaded.
   }
 }
 
