@@ -10,7 +10,10 @@
 <body>
   <!-- Texts come from _locales/<language>/messages.json (data-i18n keys); the English here is only a fallback. -->
   <main>
-    <h1>Migalhas</h1>
+    <header>
+      <h1>Migalhas</h1>
+      <button id="open-full" type="button" data-i18n="openFullPage" hidden>Open full page</button>
+    </header>
 
     <p id="access-warning" class="warning" data-i18n="accessWarning" hidden>
       Migalhas needs access to all sites to list cookies and to protect open tabs.
@@ -36,14 +39,14 @@
     <section>
       <h2 data-i18n="sitesHeading">Sites with cookies</h2>
       <p class="hint" data-i18n="sitesHint">On: cookies are kept. Off: cookies are deleted at the next clean-up.</p>
-      <p class="hint" data-i18n="lockHint">Lock a site with its padlock so the switch can't change by accident.</p>
+      <p class="hint full-only" data-i18n="lockHint">Lock a site with its padlock so the switch can't change by accident.</p>
       <div class="toolbar">
         <input id="search" type="search" data-i18n-placeholder="searchPlaceholder" data-i18n-aria-label="searchPlaceholder"
           placeholder="Search sites" aria-label="Search sites">
         <button id="switch-all-on" type="button" data-i18n="switchAllOn">Switch all on</button>
         <button id="switch-all-off" type="button" data-i18n="switchAllOff">Switch all off</button>
       </div>
-      <p class="hint" data-i18n="bulkHint">The buttons apply to the sites shown. Locked sites are skipped.</p>
+      <p class="hint full-only" data-i18n="bulkHint">The buttons apply to the sites shown. Locked sites are skipped.</p>
       <ul id="site-list"></ul>
     </section>
   </main>

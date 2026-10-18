@@ -189,3 +189,62 @@ button:disabled {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
 }
+
+header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+header h1 {
+  margin: 0;
+}
+
+/* Toolbar popup: fixed size, only the site list scrolls. */
+.popup {
+  width: 400px;
+  height: 560px;
+  overflow: hidden;
+}
+
+.popup main {
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  height: 100%;
+  padding: 12px;
+}
+
+.popup header {
+  margin-bottom: 4px;
+}
+
+.popup h1 {
+  font-size: 20px;
+}
+
+.popup h2 {
+  margin: 12px 0 4px;
+}
+
+.popup section:last-of-type {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.popup #site-list {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.popup .full-only {
+  display: none;
+}
+
+.popup #search {
+  min-width: 100px;
+}

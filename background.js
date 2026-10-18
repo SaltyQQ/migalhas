@@ -18,7 +18,6 @@ chrome.runtime.onInstalled.addListener(initialize);
 chrome.runtime.onStartup.addListener(ensureCleanupScheduled);
 chrome.alarms.onAlarm.addListener(handleAlarm);
 chrome.runtime.onMessage.addListener(handleMessage);
-chrome.action.onClicked.addListener(() => chrome.runtime.openOptionsPage());
 chrome.tabs.onUpdated.addListener(clearBadgeOnNavigation);
 
 async function initialize() {
