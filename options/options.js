@@ -1,5 +1,6 @@
 // Settings page: clean-up interval, "Clean now", and the list of sites with a keep/clear switch
 // and a padlock that stops the switch from changing by accident.
+// The same page is the toolbar popup (opened with "?popup"), in a compact layout.
 
 import { getIntervalMinutes, getNextCleanupTime, setIntervalMinutes } from "../schedule.js";
 import {
@@ -49,6 +50,9 @@ function translatePage() {
 
 async function init() {
   translatePage();
+  if (location.search === "?popup") {
+    showPopupLayout();
+  }
   accessWarning.hidden = await hasAllSitesAccess();
   intervalSelect.value = String(await getIntervalMinutes());
   await showNextCleanup();
@@ -59,6 +63,16 @@ async function init() {
   searchInput.addEventListener("input", filterSites);
   document.getElementById("switch-all-on").addEventListener("click", () => switchShownSites(true));
   document.getElementById("switch-all-off").addEventListener("click", () => switchShownSites(false));
+}
+
+function showPopupLayout() {
+  document.body.classList.add("popup");
+  const openFullButton = document.getElementById("open-full");
+  openFullButton.hidden = false;
+  openFullButton.addEventListener("click", async () => {
+    await chrome.runtime.openOptionsPage();
+    window.close();
+  });
 }
 
 async function changeInterval() {

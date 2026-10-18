@@ -2,7 +2,9 @@
 // "Switch all on/off", padlocks, "Clean now" and the interval.
 // Run from the project folder with: node tests/settings.test.mjs
 
-import { createReport, launchBrowser, sameSet, sleep, waitFor } from "./harness.mjs";
+import { readFileSync } from "node:fs";
+import path from "node:path";
+import { PROJECT_DIR, createReport, launchBrowser, sameSet, sleep, waitFor } from "./harness.mjs";
 
 const report = createReport();
 const { check } = report;
@@ -198,6 +200,26 @@ try {
   const savedInterval = await readStored(page, "intervalMinutes");
   check("Interval saved", savedInterval === 15, String(savedInterval));
   await browser.screenshot(page, "settings-after-cleanup-light.png", "light");
+
+  // Toolbar popup: the same page, compact, with a link to the full page.
+  const manifest = JSON.parse(readFileSync(path.join(PROJECT_DIR, "manifest.json"), "utf8"));
+  check("Toolbar icon opens a popup", manifest.action.default_popup === "options/options.html?popup", manifest.action.default_popup);
+  const popup = await browser.openPage(`chrome-extension://${extensionId}/options/options.html?popup`, "popup");
+  await waitFor(async () => (await readRows(popup)).length >= 2, "the popup site list");
+  const popupLayout = await browser.evaluate(
+    popup,
+    `JSON.stringify({
+      compact: document.body.classList.contains("popup"),
+      width: document.body.getBoundingClientRect().width,
+      fullLink: !document.getElementById("open-full").hidden,
+      listScrolls: getComputedStyle(document.getElementById("site-list")).overflowY,
+    })`,
+  );
+  const layout = JSON.parse(popupLayout);
+  check("Popup uses the compact layout", layout.compact && layout.width === 400, popupLayout);
+  check("Popup has the full-page link and a scrolling list", layout.fullLink && layout.listScrolls === "auto", popupLayout);
+  check("Full page has no popup link", await browser.evaluate(page, `document.getElementById("open-full").hidden`));
+  await browser.screenshot(popup, "popup-dark.png", "dark");
 
   const cleanupLog = browser.consoleLines.find((line) => line.includes("Migalhas: cookies cleared"));
   check("Service worker logged the clean-up", cleanupLog, cleanupLog);

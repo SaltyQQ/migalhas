@@ -11,6 +11,7 @@
   "interval60": { "message": "1 hora" },
   "interval1440": { "message": "24 horas" },
   "cleanNow": { "message": "Limpar agora" },
+  "openFullPage": { "message": "Abrir página completa" },
   "nextCleanup": { "message": "Próxima limpeza: $TIME$", "placeholders": { "time": { "content": "$1" } } },
   "noCleanupScheduled": { "message": "Nenhuma limpeza agendada." },
   "cleanedAt": { "message": "Cookies limpos em $TIME$.", "placeholders": { "time": { "content": "$1" } } },

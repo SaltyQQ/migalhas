@@ -38,7 +38,7 @@ Idioma do código e comentários: inglês
 - `_locales/` — textos da interface em inglês (`en`, por defeito) e português (`pt_PT`). Todo o texto novo da página de definições ou do ícone entra nos dois `messages.json` (o `i18n.test.mjs` falha se faltar uma chave). As mensagens da consola ficam em inglês.
 - `icons/` — ícone: `icon.svg` é a fonte; os PNG (16/32/48/128) geram-se com `node tools/render-icons.mjs`
 - `tools/` — scripts de desenvolvimento (não fazem parte da extensão)
-- Indicador na barra: o `content.js` envia `banner-result` ao `background.js`, que mostra ✓ (recusado), ! (deixado como estava) ou ✗ (guardou mais do que o necessário) no ícone do separador; clicar no ícone abre as definições
+- Indicador na barra: o `content.js` envia `banner-result` ao `background.js`, que mostra ✓ (recusado), ! (deixado como estava) ou ✗ (guardou mais do que o necessário) no ícone do separador; clicar no ícone abre um popup (a mesma página `options/options.html`, aberta com `?popup`, em layout compacto de 400×560 px, com o botão "Abrir página completa" para o separador)
 - `tests/` — testes automáticos: `harness.mjs` lança e controla o Chrome; um `*.test.mjs` por funcionalidade; `fixtures/` com cópias locais dos banners
 
 # Regras importantes
